@@ -1,0 +1,78 @@
+Processing begun 2018-03-25 15:16:49.992569
+sys.argv is ['/Users/carolzhou/DEV/PhATE/Code/SequenceAnnotation/phate_sequenceAnnotation_main.py', '-o', '/Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/', '-G', '/Users/carolzhou/DEV/PhATE/Code/PipelineInput/Ec_P2_NC_001895.fasta', '-g', '/Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/gene.fnt', '-p', '/Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/protein.faa', '-c', 'thea', '-f', '/Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/thea.cgc', '-C', 'Ec_P2_NC_001895', '-t', 'phage', '-n', 'Ec_P2', '-s', 'phage', '-i', '60', '-h', '3', '-H', '3', '-d', '__ncbiVirusGenome_ncbiVirusProtein_kegg_pvogs_phantome', '-P', '/Users/carolzhou/DEV/PhATE/Code/PipelineInput/Ec_P2.psat']
+outputDir is/Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/
+outfile is /Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/phate_sequenceAnnotation_main.out
+gfffile is /Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/phate_sequenceAnnotation_main.gff
+infile_genome is /Users/carolzhou/DEV/PhATE/Code/PipelineInput/Ec_P2_NC_001895.fasta
+geneCaller is thea
+geneticCode is 11
+infile_geneCall is /Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/thea.cgc
+infile_gene is /Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/gene.fnt
+infile_protein is /Users/carolzhou/DEV/PhATE/Code/PipelineOutput/Ec_P2/protein.faa
+genomeType is phage
+name is Ec_P2
+contigName is Ec_P2_NC_001895
+species is phage
+blastpIdentity is 60
+blastpHitCount is 3
+blastnHitCount is 3
+psat file is /Users/carolzhou/DEV/PhATE/Code/PipelineInput/Ec_P2.psat
+Annotating
+NCBI_VIRUS_BLAST is True
+NCBI_VIRUS_PROTEIN_BLAST is True
+KEGG_VIRUS_BLAST is True
+NR_BLAST is False
+REFSEQ_PROTEIN_BLAST is False
+PHANTOME_BLAST is True
+PVOGS_BLAST is True
+UNIPARC_BLAST is False
+REFSEQ_GENE_BLAST is False
+Setting parameters for genome
+Reading sequence into genome object
+Processing gene calls
+Writing genes file
+Writing peptides file
+Gene and protein files created.
+Creating a blast object
+Preparing to run blastp at the following settings:
+Parameters:
+   blast flavor blastp
+   identity min 50
+   evalue min 0.01
+   identity select: 70
+   evalue select: 0.01
+   topHitCount: 3
+   scoreEdge: 0.1
+   overhang 0.1
+   outputFormat: 5
+Preparing to run blastn at the following settings:
+Parameters:
+   blast flavor blastn
+   identity min 20
+   evalue min 10.0
+   identity select: 20
+   evalue select: 10.0
+   topHitCount: 3
+   scoreEdge: 0.1
+   overhang 0.1
+   outputFormat: 5
+Preparing to run blastn at the following settings:
+Parameters:
+   blast flavor blastn
+   identity min 20
+   evalue min 10.0
+   identity select: 20
+   evalue select: 10.0
+   topHitCount: 3
+   scoreEdge: 0.1
+   overhang 0.1
+   outputFormat: 5
+Running Blast against phage genome database(s)...
+Genome blast complete.
+Running Blast against gene databases...
+Gene blast complete.
+Running Blast against protein database(s)...
+Protein blast complete.
+Setting PSAT parameters and recording PSAT annotations.
+Reporting final annotaitons.
+Processing complete 2018-03-25 15:22:21.721154
