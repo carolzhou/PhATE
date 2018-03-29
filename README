@@ -43,6 +43,14 @@ Locations of supporting databases and codes are specified in the file, phate_run
 
 A sample configuration file is provided (phate.config). Make a copy of this file and rename it accordingly. The phate.config file is configured according to established default parameters. Any of the parameters may be modified (switches turned 'on' or 'off') by assigning 'true' or 'false'. It is suggested that you turn swithes off, then install each supporting database in turn and test the code. A switch not included in the configuration file is CLEAN, which you will find in phate_blast.py (under the SequenceAnnotation directory). By default all raw blast output (written under PipelineOutput/BLAST/ subdirectories) will be deleted, so as to limit output volume. However, if you wish to retain that output, turn the CLEAN switch to 'True' in phate_blast.py.
 
+PHATE PIPELINE OUTPUT FILES
+In the user-specified output directory, under PipelineOutput/, the following files will be written:
+* gene.fnt and protein.faa fasta files generated using the designated preferred gene finder
+* CGC_results.txt - side-by-side comparison of all gene finder results
+* phate_sequenceAnnotation_main.out - integrated annotation results
+* BLAST/ directory - raw blast results for genome (under Genome/) and proteins (under Protein/) if CLEAN switch is 'False'
+* pVOG groupings comprising alignment-ready fasta files (under BLAST/Protein/)
+
 RUNNING PHATE AS AN "EMBARASSINGLY PARALLEL" CODE
 
 Phate output is written to a user-specified output directory (specified in phate.config). In this way, PhATE may be set up to run in parallel on any number of nodes of a compute cluster without fear of clashes in writing results.
