@@ -11,6 +11,7 @@
 #        26 May     2017 - added control to blast or not to blast
 #        06 July    2017 - adding pVOGs blast
 #        05 Sept    2017 - fixing bug in printing of pVOGs group fastas
+#        07 April   2018 - adding refseq gene blast and swissprot blast
 #
 # Classes and Methods:
 #    multiBlast
@@ -57,6 +58,9 @@ PHANTOME_BLAST_HOME           = os.environ["PHANTOME_BLAST_HOME"]
 UNIPARC_VIRUS_BLAST_HOME      = os.environ["UNIPARC_VIRUS_BLAST_HOME"]
 NR_BLAST_HOME                 = os.environ["NR_BLAST_HOME"]
 PVOGS_BLAST_HOME              = os.environ["PVOGS_BLAST_HOME"]
+REFSEQ_PROTEIN_BLAST_HOME     = os.environ["REFSEQ_PROTEIN_BLAST_HOME"]
+REFSEQ_GENE_BLAST_HOME        = os.environ["REFSEQ_GENE_BLAST_HOME"]
+SWISSPROT_BLAST_HOME          = os.environ["SWISSPROT_BLAST_HOME"]
 
 # Other configurables 
 
@@ -105,10 +109,11 @@ class multiBlast(object):
         self.NR_BLAST                 = False     # ditto 
         self.KEGG_VIRUS_BLAST         = False     # ditto
         self.REFSEQ_PROTEIN_BLAST     = False     # ditto
+        self.REFSEQ_GENE_BLAST        = False     # ditto # not yet in service
         self.PHANTOME_BLAST           = False     # ditto
         self.PVOGS_BLAST              = False     # ditto
         self.UNIPARC_BLAST            = False     # ditto # not yet in service
-        self.REFSEQ_GENE_BLAST        = False     # ditto # not yet in service
+        self.SWISSPROT_BLAST          = False     # ditto # not yet in service
 
     ##### SET AND GET PARAMETERS
 
@@ -148,14 +153,16 @@ class multiBlast(object):
                 self.KEGG_VIRUS_BLAST = paramset["keggVirusBlast"]
             if 'refseqProteinBlast' in paramset.keys():
                 self.REFSEQ_PROTEIN_BLAST = paramset["refseqProteinBlast"]
+            if 'refseqGeneBlast' in paramset.keys():
+                self.REFSEQ_GENE_BLAST = paramset["refseqGeneBlast"]
             if 'phantomeBlast' in paramset.keys():
                 self.PHANTOME_BLAST = paramset["phantomeBlast"]
             if 'pvogsBlast' in paramset.keys():
                 self.PVOGS_BLAST = paramset["pvogsBlast"]
             if 'uniparcBlast' in paramset.keys():
                 self.UNIPARC_BLAST = paramset["uniparcBlast"]
-            if 'refseqGene' in paramset.keys():
-                self.REFSEQ_GENE = paramset["refseqGene"]
+            if 'swissprotBlast' in paramset.keys():
+                self.SWISSPROT_BLAST = paramset["swissprotBlast"]
 
     def setBlastFlavor(self,flavor):
         if(flavor.lower() == 'blastp'):
@@ -516,8 +523,17 @@ class multiBlast(object):
                     self.blast1fasta(fasta,outfile,database,dbName)
 
         if GENE:
-            pass
-            #print "  Blasting against Refseq Gene database..."
+            if self.REFSEQ_GENE_BLAST:
+                print "  Blasting against Refseq Gene database..."
+                database = REFSEQ_GENE_BLAST_HOME
+                dbName   = 'refseqGene'
+                count = 0
+                if CHATTY:
+                    print "Running Refseq gene blast:", database, dbName
+                for fasta in fastaSet.fastaList:
+                    count += 1
+                    outfile = self.blastOutDir + self.blastFlavor + "_refseqGene_" + str(count)
+                    self.blast1fasta(fasta,outfile,database,dbName)  #*** CONTROL
 
         if PROTEIN:
             if self.NR_BLAST:  
@@ -590,6 +606,18 @@ class multiBlast(object):
                 for fasta in fastaSet.fastaList:
                     count += 1
                     outfile = self.blastOutDir + self.blastFlavor + "_uniparc_" + str(count)
+                    self.blast1fasta(fasta,outfile,database,dbName)   #*** CONTROL
+
+            if self.SWISSPROT_BLAST: 
+                print "  Blasting against Swissprot database..."
+                database = SWISSPROT_BLAST_HOME
+                dbName   = 'swissprot'
+                count = 0
+                if CHATTY:
+                    print "Running Swissprot blast:", database, dbName
+                for fasta in fastaSet.fastaList:
+                    count += 1
+                    outfile = self.blastOutDir + self.blastFlavor + "_swissprot_" + str(count)
                     self.blast1fasta(fasta,outfile,database,dbName)   #*** CONTROL
 
             if self.PVOGS_BLAST:  

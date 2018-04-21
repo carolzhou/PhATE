@@ -45,16 +45,16 @@ GFFFILE = CODE_BASE + ".gff"
 # Get environment variables (set by phate_runPipeline.py)
 PIPELINE_DIR                  = os.environ["PIPELINE_DIR"]
 BLAST_HOME                    = os.environ["BLAST_HOME"] 
-KEGG_VIRUS_BASE_DIR           = os.environ["KEGG_VIRUS_BASE_DIR"]
 KEGG_VIRUS_BLAST_HOME         = os.environ["KEGG_VIRUS_BLAST_HOME"]
-NCBI_VIRUS_BASE_DIR           = os.environ["NCBI_VIRUS_BASE_DIR"]
 NCBI_VIRUS_BLAST_HOME         = os.environ["NCBI_VIRUS_BLAST_HOME"]
 NCBI_VIRUS_PROTEIN_BLAST_HOME = os.environ["NCBI_VIRUS_PROTEIN_BLAST_HOME"]
-PHANTOME_BASE_DIR             = os.environ["PHANTOME_BASE_DIR"]
+REFSEQ_PROTEIN_BLAST_HOME     = os.environ["REFSEQ_PROTEIN_BLAST_HOME"]
+REFSEQ_GENE_BLAST_HOME        = os.environ["REFSEQ_GENE_BLAST_HOME"]
 PHANTOME_BLAST_HOME           = os.environ["PHANTOME_BLAST_HOME"]
+PVOGS_BASE_DIR                = os.environ["PVOGS_BASE_DIR"]
 PVOGS_BLAST_HOME              = os.environ["PVOGS_BLAST_HOME"]
-UNIPARC_BASE_DIR              = os.environ["UNIPARC_BASE_DIR"]
 UNIPARC_VIRUS_BLAST_HOME      = os.environ["UNIPARC_VIRUS_BLAST_HOME"]
+SWISSPROT_BLAST_HOME          = os.environ["SWISSPROT_BLAST_HOME"]
 NR_BLAST_HOME                 = os.environ["NR_BLAST_HOME"]
 EMBOSS_HOME                   = os.environ["EMBOSS_HOME"]
 NCBI_TAXON_DIR                = os.environ["NCBI_TAXON_DIR"]
@@ -107,10 +107,11 @@ NCBI_VIRUS_PROTEIN_BLAST = False
 NR_BLAST                 = False
 KEGG_VIRUS_BLAST         = False
 REFSEQ_PROTEIN_BLAST     = False
+REFSEQ_GENE_BLAST        = False
 PHANTOME_BLAST           = False
 PVOGS_BLAST              = False
 UNIPARC_BLAST            = False
-REFSEQ_GENE_BLAST        = False
+SWISSPROT_BLAST          = False
 
 ##### PATTERNS and CONTROL
 
@@ -141,10 +142,11 @@ p_ncbiVirusProtein     = re.compile('ncbiVirusProtein') # part of input string n
 p_nr                   = re.compile('nr')               # part of input string naming databases to blast against
 p_keggVirus            = re.compile('kegg')             # part of input string naming databases to blast against
 p_refseqProtein        = re.compile('refseqP')          # part of input string naming databases to blast against
+p_refseqGene           = re.compile('refseqG')          # part of input string naming databases to blast against
 p_phantome             = re.compile('phantome')         # part of input string naming databases to blast against
 p_pvogs                = re.compile('pvogs')            # part of input string naming databases to blast against
 p_uniparc              = re.compile('uniparc')          # part of input string naming databases to blast against
-p_refseqGene           = re.compile('refseqG')          # part of input string naming databases to blast against
+p_swissprot            = re.compile('swissprot')        # part of input string naming databases to blast against
 
 # Initialize
 TRANSLATE_ONLY = False
@@ -289,10 +291,11 @@ for i in xrange(0,argCount):
             match_nr               = re.search(p_nr,value)
             match_kegg             = re.search(p_keggVirus,value)
             match_refseqProtein    = re.search(p_refseqProtein,value)
+            match_refseqGene       = re.search(p_refseqGene,value)
             match_phantome         = re.search(p_phantome,value)
             match_pvogs            = re.search(p_pvogs,value)
             match_uniparc          = re.search(p_uniparc,value)
-            match_refseqGene       = re.search(p_refseqGene,value)
+            match_swissprot        = re.search(p_swissprot,value)
             if match_ncbiVirus:
                 NCBI_VIRUS_BLAST = True
             if match_ncbiVirusProtein:
@@ -303,14 +306,16 @@ for i in xrange(0,argCount):
                 KEGG_VIRUS_BLAST = True
             if match_refseqProtein:
                 REFSEQ_PROTEIN_BLAST = True
+            if match_refseqGene:
+                REFSEQ_GENE_BLAST = True
             if match_phantome:
                 PHANTOME_BLAST = True
             if match_pvogs:
                 PVOGS_BLAST = True 
             if match_uniparc:
                 UNIPARC_BLAST = True
-            if match_refseqGene:
-                REFSEQ_GENE = True
+            if match_swissprot:
+                SWISSPROT_BLAST = True
 
 # Open and Check files
 
@@ -400,10 +405,11 @@ LOGFILE_H.write("%s%s\n" % ("NCBI_VIRUS_PROTEIN_BLAST is ",NCBI_VIRUS_PROTEIN_BL
 LOGFILE_H.write("%s%s\n" % ("KEGG_VIRUS_BLAST is ",KEGG_VIRUS_BLAST))
 LOGFILE_H.write("%s%s\n" % ("NR_BLAST is ",NR_BLAST))
 LOGFILE_H.write("%s%s\n" % ("REFSEQ_PROTEIN_BLAST is ",REFSEQ_PROTEIN_BLAST))
+LOGFILE_H.write("%s%s\n" % ("REFSEQ_GENE_BLAST is ",REFSEQ_GENE_BLAST))
 LOGFILE_H.write("%s%s\n" % ("PHANTOME_BLAST is ",PHANTOME_BLAST))
 LOGFILE_H.write("%s%s\n" % ("PVOGS_BLAST is ",PVOGS_BLAST))
 LOGFILE_H.write("%s%s\n" % ("UNIPARC_BLAST is ",UNIPARC_BLAST))
-LOGFILE_H.write("%s%s\n" % ("REFSEQ_GENE_BLAST is ",REFSEQ_GENE_BLAST))
+LOGFILE_H.write("%s%s\n" % ("SWISSPROT_BLAST is ",SWISSPROT_BLAST))
 
 # Communicate to user
 if CHATTY:
@@ -437,10 +443,11 @@ if CHATTY:
     print "NR_BLAST is", NR_BLAST
     print "KEGG_VIRUS_BLAST is", KEGG_VIRUS_BLAST
     print "REFSEQ_PROTEIN_BLAST is", REFSEQ_PROTEIN_BLAST
+    print "REFSEQ_GENE_BLAST is", REFSEQ_GENE_BLAST
     print "PHANTOME_BLAST is", PHANTOME_BLAST
     print "PVOGS_BLAST is", PVOGS_BLAST
     print "UNIPARC_BLAST is", UNIPARC_BLAST
-    print "REFSEQ_GENE_BLAST is", REFSEQ_GENE_BLAST
+    print "SWISSRPOT_BLAST is", SWISSPROT_BLAST
 
 ##### BEGIN MAIN 
 
@@ -639,6 +646,7 @@ else:
         'phantomeBlast'         : PHANTOME_BLAST,
         'pvogsBlast'            : PVOGS_BLAST,
         'uniparcBlast'          : UNIPARC_BLAST,
+        'swissprotBlast'        : SWISSPROT_BLAST,
     }
     blast.setBlastParameters(myParamSet)
     blast.setBlastFlavor('blastp')

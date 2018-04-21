@@ -3,11 +3,9 @@
 ################################################################
 #
 # Next:
-# *) Fully test all switches.
-# *) Rewrite README file/instructions.
 # *) Consolidate log files.
-# *) Implement refseq_protein blast.
 # *) Implement user-configurable blast parameters.
+# *) Incorporate blast against refseqgene, swissprot
 #
 # phate_runPipeline.py
 #
@@ -70,11 +68,12 @@ NCBI_VIRUS_BLAST_DEFAULT         = True
 NCBI_VIRUS_PROTEIN_BLAST_DEFAULT = True
 KEGG_VIRUS_BLAST_DEFAULT         = False     # Requires license
 NR_BLAST_DEFAULT                 = False     # Large data set; blast run takes time
-REFSEQ_PROTEIN_BLAST_DEFAULT     = False     # Large data set; blast run takes time
+REFSEQ_PROTEIN_BLAST_DEFAULT     = True      # Large data set; blast run takes time
 PHANTOME_BLAST_DEFAULT           = True
 PVOGS_BLAST_DEFAULT              = True
 UNIPARC_BLAST_DEFAULT            = False     # Turned 'off' for now; not yet in service
-REFSEQ_GENE_BLAST_DEFAULT        = False     # Turned 'off' for now; not yet in service 
+REFSEQ_GENE_BLAST_DEFAULT        = True 
+SWISSPROT_BLAST_DEFAULT          = True
 
 #gene callers
 GENEMARKS_CALLS_DEFAULT          = False     # Requires license
@@ -130,9 +129,6 @@ if MYCLUSTER:  # machine running code
     os.environ["BLASTP_HIT_COUNT_DEFAULT"]      = BLASTP_HIT_COUNT_DEFAULT
     os.environ["BLASTN_HIT_COUNT_DEFAULT"]      = BLASTN_HIT_COUNT_DEFAULT
 
-else:
-    print """You need to set the environment variables in """ + CODE + """\n"""
-
 elif HOME_LAPTOP:  # machine running code 
     BASE_DIR = "/Users/carolzhou/DEV/PhATE/Code/" 
     os.environ["EMBOSS_HOME"]                   = "/Users/carolzhou/DEV/PhATE/OtherCodes/EMBOSS/EMBOSS-6.6.0/emboss/" #*** name of code is transeq.c
@@ -154,8 +150,12 @@ elif HOME_LAPTOP:  # machine running code
     os.environ["UNIPARC_VIRUS_BLAST_HOME"]      = os.environ["UNIPARC_BASE_DIR"] + "insertSubDir/insertName"  #***uniparc_active.fasta ???
     os.environ["NR_BLAST_BASE_DIR"]             = "/Users/carolzhou/DEV/PhATE/Databases/NR/"
     os.environ["NR_BLAST_HOME"]                 = os.environ["NR_BLAST_BASE_DIR"] + "nr"
-    os.environ["REFSEQ_PROTEIN_BASE_DIR"]       = "/Users/carolzhou/DEV/PhATE/Databases/Refseq/"
+    os.environ["REFSEQ_PROTEIN_BASE_DIR"]       = "/Users/carolzhou/DEV/PhATE/Databases/Refseq/Protein/"
     os.environ["REFSEQ_PROTEIN_BLAST_HOME"]     = os.environ["REFSEQ_PROTEIN_BASE_DIR"] + "refseq_protein"
+    os.environ["REFSEQ_GENE_BASE_DIR"]          = "/Users/carolzhou/DEV/PhATE/Databases/Refseq/Gene/"
+    os.environ["REFSEQ_GENE_BLAST_HOME"]        = os.environ["REFSEQ_GENE_BASE_DIR"] + "refseqgene"
+    os.environ["SWISSPROT_BASE_DIR"]            = "/Users/carolzhou/DEV/PhATE/Databases/Swissprot/"
+    os.environ["SWISSPROT_BLAST_HOME"]          = os.environ["SWISSPROT_BASE_DIR"] + "swissprot"
 
     # Gene calling
     os.environ["PRODIGAL_PATH"]                 = "/usr/local/bin/"
@@ -238,6 +238,8 @@ p_ncbiVirusProteinBlast = re.compile("ncbi_virus_protein_blast='(.*)'")
 p_keggVirusBlast        = re.compile("kegg_virus_blast='(.*)'")
 p_nrBlast               = re.compile("nr_blast='(.*)'")
 p_refseqProteinBlast    = re.compile("refseq_protein_blast='(.*)'")
+p_refseqGeneBlast       = re.compile("refseq_gene_blast='(.*)'")
+p_swissprotBlast        = re.compile("swissprot_blast='(.*)'")
 p_phantomeBlast         = re.compile("phantome_blast='(.*)'")
 p_pvogsBlast            = re.compile("pvogs_blast='(.*)'")
 p_uniparcBlast          = re.compile("uniparc_blast='(.*)'")
@@ -331,10 +333,11 @@ ncbiVirusProteinBlast = NCBI_VIRUS_PROTEIN_BLAST_DEFAULT
 keggVirusBlast        = KEGG_VIRUS_BLAST_DEFAULT
 nrBlast               = NR_BLAST_DEFAULT
 refseqProteinBlast    = REFSEQ_PROTEIN_BLAST_DEFAULT
+refseqGeneBlast       = REFSEQ_GENE_BLAST_DEFAULT
 phantomeBlast         = PHANTOME_BLAST_DEFAULT
 pvogsBlast            = PVOGS_BLAST_DEFAULT
 uniparcBlast          = UNIPARC_BLAST_DEFAULT
-refseqGeneBlast       = REFSEQ_GENE_BLAST_DEFAULT
+swissprotBlast        = SWISSPROT_BLAST_DEFAULT
 genemarksCalls        = GENEMARKS_CALLS_DEFAULT
 prodigalCalls         = PRODIGAL_CALLS_DEFAULT
 glimmerCalls          = GLIMMER_CALLS_DEFAULT
@@ -365,9 +368,11 @@ for cLine in cLines:
     match_keggVirusBlast        = re.search(p_keggVirusBlast,cLine)
     match_nrBlast               = re.search(p_nrBlast,cLine)
     match_refseqProteinBlast    = re.search(p_refseqProteinBlast,cLine)
+    match_refseqGeneBlast       = re.search(p_refseqGeneBlast,cLine)
     match_phantomeBlast         = re.search(p_phantomeBlast,cLine)
     match_pvogsBlast            = re.search(p_pvogsBlast,cLine)
     match_uniparcBlast          = re.search(p_uniparcBlast,cLine)
+    match_swissprotBlast        = re.search(p_swissprotBlast,cLine)
     match_refseqGeneBlast       = re.search(p_refseqGeneBlast,cLine)
     match_genemarksCalls        = re.search(p_genemarksCalls,cLine)
     match_prodigalCalls         = re.search(p_prodigalCalls,cLine)
@@ -508,6 +513,13 @@ for cLine in cLines:
         else:
             refseqProteinBlast = False
 
+    elif match_refseqGeneBlast:
+        value = match_refseqGeneBlast.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            refseqGeneBlast = True
+        else:
+            refseqGeneBlast = False
+
     elif match_phantomeBlast:
         value = match_phantomeBlast.group(1)
         if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
@@ -529,12 +541,12 @@ for cLine in cLines:
         else:
             uniparcBlast = False
 
-    elif match_refseqGeneBlast:
-        value = match_refseqGeneBlast.group(1).lower()
+    elif match_swissprotBlast:
+        value = match_swissprotBlast.group(1).lower()
         if value == 'true' or value == 'yes' or value == 'on':
-            refseqGeneBlast = True
+            swissprotBlast = True
         else:
-            refseqGeneBlast = False
+            swissprotBlast = False
 
     elif match_genemarksCalls:
         value = match_genemarksCalls.group(1)
@@ -588,10 +600,11 @@ blastParameters = {
     "keggVirusBlast"        : keggVirusBlast,
     "nrBlast"               : nrBlast,
     "refseqProteinBlast"    : refseqProteinBlast,
+    "refseqGeneBlast"       : refseqGeneBlast,
     "phantomeBlast"         : phantomeBlast,
     "pvogsBlast"            : pvogsBlast,
     "uniparcBlast"          : uniparcBlast,
-    "refseqGeneBlast"       : refseqGeneBlast,
+    "swissprotBlast"        : swissprotBlast,
     }
 
 genecallParameters = {
@@ -639,10 +652,11 @@ if CHATTY:
     print "keggVirusBlast is", keggVirusBlast
     print "nrBlast is", nrBlast
     print "refseqProteinBlast is", refseqProteinBlast
+    print "refseqGeneBlast is", refseqGeneBlast
     print "phantomeBlast is", phantomeBlast
     print "pvogsBlast is", pvogsBlast
     print "uniparcBlast is", uniparcBlast
-    print "refseqGeneBlast is", refseqGeneBlast
+    print "swissprotBlast is", swissprotBlast
     print "genemarksCalls is", genemarksCalls
     print "prodigalCalls is", prodigalCalls
     print "glimmerCalls is", glimmerCalls
@@ -674,9 +688,11 @@ LOGFILE.write("%s%s\n" % ("   ncbiVirusProteinBlast is ",ncbiVirusProteinBlast))
 LOGFILE.write("%s%s\n" % ("   keggVirusBlast is ",keggVirusBlast))
 LOGFILE.write("%s%s\n" % ("   nrBlast is ",nrBlast))
 LOGFILE.write("%s%s\n" % ("   refseqProteinBlast is ",refseqProteinBlast))
+LOGFILE.write("%s%s\n" % ("   refseqGeneBlast is ",refseqGeneBlast))
 LOGFILE.write("%s%s\n" % ("   phantomeBlast is ",phantomeBlast))
 LOGFILE.write("%s%s\n" % ("   pvogsBlast is ",pvogsBlast))
-LOGFILE.write("%s%s\n" % ("   refseqGeneBlast is ",refseqGeneBlast))
+LOGFILE.write("%s%s\n" % ("   uniparcBlast is ",uniparcBlast))
+LOGFILE.write("%s%s\n" % ("   swissprotBlast is ",swissprotBlast))
 LOGFILE.write("%s%s\n" % ("   genemarksCalls is ",genemarksCalls))
 LOGFILE.write("%s%s\n" % ("   prodigalCalls is ",prodigalCalls))
 LOGFILE.write("%s%s\n" % ("   glimmerCalls is ",glimmerCalls))
@@ -699,6 +715,8 @@ geneFile     = PIPELINE_OUTPUT_SUBDIR + GENE_FILE
 proteinFile  = PIPELINE_OUTPUT_SUBDIR + PROTEIN_FILE
 if PSAT:
     psatFile = PIPELINE_INPUT_DIR + PSAT_FILE
+else:
+    psatFile = ''
 outputDir    = PIPELINE_OUTPUT_SUBDIR
 
 LOGFILE.write("%s%s\n" % ("inputDir is ",inputDir))
@@ -794,14 +812,16 @@ if blastParameters['keggVirusBlast']:
     blastParameterString += '_kegg'
 if blastParameters['refseqProteinBlast']:
     blastParameterString += '_refseqProtein'
+if blastParameters['refseqGeneBlast']:
+    blastParameterString += '_refseqGene'
 if blastParameters['pvogsBlast']:
     blastParameterString += '_pvogs'
 if blastParameters['phantomeBlast']:
     blastParameterString += '_phantome'
 if blastParameters['uniparcBlast']:
     blastParameterString += '_uniparc'
-if blastParameters['refseqGeneBlast']:
-    blastParameterString += '_refseqGene'
+if blastParameters['swissprotBlast']:
+    blastParameterString += '_swissprot'
 
 commandRoot1 = "python " + SEQANNOTATION_CODE + " -o " + outputDir  # code and output direction
 commandRoot2 = " -G " + genomeFile        + " -g " + geneFile       + " -p " + proteinFile    # genome files
