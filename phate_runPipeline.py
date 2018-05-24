@@ -5,7 +5,7 @@
 # Next:
 # *) Consolidate log files.
 # *) Implement user-configurable blast parameters.
-# *) Incorporate blast against refseqgene, swissprot
+# *) Add Uniprot and Pfam databases
 #
 # phate_runPipeline.py
 #
@@ -41,18 +41,24 @@ import sys, os, re, string, copy, time, datetime
 from subprocess import call
 
 
-# Constants and Configurables
+# Constants and Configurables; defaults will apply if not specified in config file
 
 #various parameters
-CONSENSUS_CALLS_FILE     = 'thea.cgc' #*** For now this is THEA calls, though may be consensus calls in future
+CONSENSUS_CALLS_FILE     = 'phanotate.cgc' #*** For now this is PHANOTATE calls, though may be consensus calls in future
 GENE_FILE                = 'gene.fnt'                              #
 PROTEIN_FILE             = 'protein.faa'                           # 
-GENETIC_CODE             = '11'      # default is bacterial (11)
-GENE_CALLER              = 'thea'    # default is annotation of phage, so THEA is preferred gene caller; if bac, could be 'consensus', 'genemark', 'glimmer', or 'prodigal'
-GENOME_TYPE              = 'phage'   # default is phage; could be 'bacterium'
-NAME                     = 'unknown' # user provided
-CONTIG_NAME              = 'unknown' # user provided: temporary, finished genomes/single contig only for now
-SPECIES                  = 'unknown' # user provided
+GENETIC_CODE             = '11'        # default is bacterial (11)
+GENE_CALLER              = 'phanotate' # default is annotation of phage, so PHANOTATE is preferred gene caller; if bac, could be 'consensus', 'genemark', 'glimmer', or 'prodigal'
+GENOME_TYPE              = 'phage'     # default is phage; could be 'bacterium'
+NAME                     = 'unknown'   # user provided
+CONTIG_NAME              = 'unknown'   # user provided: temporary, finished genomes/single contig only for now
+SPECIES                  = 'unknown'   # user provided
+
+#gene callers
+GENEMARKS_CALLS_DEFAULT          = False     # Requires license
+PRODIGAL_CALLS_DEFAULT           = True
+GLIMMER_CALLS_DEFAULT            = True
+PHANOTATE_CALLS_DEFAULT          = True
 
 #blast parameters
 MAX_BLAST_HIT_COUNT      = 100       # maximum number of hits to capture (user should specify far fewer than max)
@@ -74,12 +80,25 @@ PVOGS_BLAST_DEFAULT              = True
 UNIPARC_BLAST_DEFAULT            = False     # Turned 'off' for now; not yet in service
 REFSEQ_GENE_BLAST_DEFAULT        = True 
 SWISSPROT_BLAST_DEFAULT          = True
+UNIPROT_BLAST_DEFAULT            = False     # not yet in service
+PFAM_BLAST_DEAFULT               = False     # not yet in service
 
-#gene callers
-GENEMARKS_CALLS_DEFAULT          = False     # Requires license
-PRODIGAL_CALLS_DEFAULT           = True
-GLIMMER_CALLS_DEFAULT            = True
-THEA_CALLS_DEFAULT               = True
+#hmm programs 
+HMM_PROGRAM_DEFAULT              = 'jackhmmer'  # This is the only program currently supported
+
+#hmm databases
+NCBI_VIRUS_HMM_DEFAULT           = False     # not yet in service
+NCBI_VIRUS_PROTEIN_HMM_DEFAULT   = False     # not yet in service 
+KEGG_VIRUS_HMM_DEFAULT           = False     # Requires license
+NR_HMM_DEFAULT                   = False     # Large data set; hmm run takes time
+REFSEQ_PROTEIN_HMM_DEFAULT       = False     # Large data set; hmm run takes time
+PHANTOME_HMM_DEFAULT             = False     # not yet in service 
+PVOGS_HMM_DEFAULT                = True      #  
+UNIPARC_HMM_DEFAULT              = False     # not yet in service
+REFSEQ_GENE_HMM_DEFAULT          = False     # not yet in service 
+SWISSPROT_HMM_DEFAULT            = False     # not yet in service
+UNIPROT_HMM_DEFAULT              = False     # not yet in service
+PFAM_HMM_DEAFULT                 = False     # not yet in service
 
 #other
 PSAT_ANNOTATION_DEFAULT          = False     # Requires LLNL processing
@@ -112,12 +131,16 @@ if MYCLUSTER:  # machine running code
     os.environ["NR_BLAST_HOME"]                 = os.environ["NR_BLAST_BASE_DIR"] + "nr"
     os.environ["REFSEQ_PROTEIN_BASE_DIR"]       = "/Users/yourname/DEV/PhATE/Databases/Refseq/"
     os.environ["REFSEQ_PROTEIN_BLAST_HOME"]     = os.environ["REFSEQ_PROTEIN_BASE_DIR"] + "refseq_protein"
+    os.environ["UNIPROT_BASE_DIR"]              = "/Users/yourname/DEV/PhATE/Databases/Uniprot/"
+    os.environ["UNIPROT_BLAST_HOME"]            = os.environ["UNIPROT_BASE_DIR"] + "uniprot"
+    os.environ["PFAM_BASE_DIR"]                 = "/Users/yourname/DEV/PhATE/Databases/Pfam/"
+    os.environ["PFAM_BLAST_HOME"]               = os.environ["PFAM_BASE_DIR"] + "pfam"
 
     # Gene calling
     os.environ["PRODIGAL_PATH"]                 = "/usr/local/bin/"
     os.environ["GLIMMER_PATH"]                  = "/Users/yourname/DEV/PhATE/OtherCodes/Glimmer/glimmer3.02/bin/"
     os.environ["GENEMARKS_PATH"]                = "/Users/yourname/DEV/PhATE/OtherCodes/GeneMarkS/genemark_suite_linux_64/gmsuite/"  
-    os.environ["THEA_PATH"]                     = "/Users/yourname/DEV/PhATE/OtherCodes/THEA/THEA-master/"
+    os.environ["PHANOTATE_PATH"]                = "/Users/yourname/DEV/PhATE/OtherCodes/PHANOTATE/PHANOTATE-master/"
     os.environ["CGC_PATH"]                      = "/Users/yourname/DEV/PhATE/Code/CompareCalls/"
 
     # Blast
@@ -128,6 +151,9 @@ if MYCLUSTER:  # machine running code
     os.environ["BLASTP_IDENTITY_DEFAULT"]       = BLASTP_IDENTITY_DEFAULT
     os.environ["BLASTP_HIT_COUNT_DEFAULT"]      = BLASTP_HIT_COUNT_DEFAULT
     os.environ["BLASTN_HIT_COUNT_DEFAULT"]      = BLASTN_HIT_COUNT_DEFAULT
+
+    # HMM
+    os.environ["HMM_HOME"]                      = ""
 
 elif HOME_LAPTOP:  # machine running code 
     BASE_DIR = "/Users/carolzhou/DEV/PhATE/Code/" 
@@ -156,12 +182,16 @@ elif HOME_LAPTOP:  # machine running code
     os.environ["REFSEQ_GENE_BLAST_HOME"]        = os.environ["REFSEQ_GENE_BASE_DIR"] + "refseqgene"
     os.environ["SWISSPROT_BASE_DIR"]            = "/Users/carolzhou/DEV/PhATE/Databases/Swissprot/"
     os.environ["SWISSPROT_BLAST_HOME"]          = os.environ["SWISSPROT_BASE_DIR"] + "swissprot"
+    os.environ["UNIPROT_BASE_DIR"]              = "/Users/carolzhou/DEV/PhATE/Databases/Uniprot/"
+    os.environ["UNIPROT_BLAST_HOME"]            = os.environ["UNIPROT_BASE_DIR"] + "uniprot"
+    os.environ["PFAM_BASE_DIR"]                 = "/Users/carolzhou/DEV/PhATE/Databases/Pfam/"
+    os.environ["PFAM_BLAST_HOME"]               = os.environ["PFAM_BASE_DIR"] + "pfam"
 
     # Gene calling
     os.environ["PRODIGAL_PATH"]                 = "/usr/local/bin/"
     os.environ["GLIMMER_PATH"]                  = "/Users/carolzhou/DEV/PhATE/OtherCodes/Glimmer/glimmer3.02/bin/"
     os.environ["GENEMARKS_PATH"]                = "/Users/carolzhou/DEV/PhATE/OtherCodes/GeneMarkS/genemark_suite_linux_64/gmsuite/"  
-    os.environ["THEA_PATH"]                     = "/Users/carolzhou/DEV/PhATE/OtherCodes/THEA/THEA-master/"
+    os.environ["PHANOTATE_PATH"]                = "/Users/carolzhou/DEV/PhATE/OtherCodes/PHANOTATE/PHANOTATE-master/"
     os.environ["CGC_PATH"]                      = "/Users/carolzhou/DEV/PhATE/Code/CompareCalls/"
 
     # Blast
@@ -172,6 +202,9 @@ elif HOME_LAPTOP:  # machine running code
     os.environ["BLASTP_IDENTITY_DEFAULT"]       = BLASTP_IDENTITY_DEFAULT
     os.environ["BLASTP_HIT_COUNT_DEFAULT"]      = BLASTP_HIT_COUNT_DEFAULT
     os.environ["BLASTN_HIT_COUNT_DEFAULT"]      = BLASTN_HIT_COUNT_DEFAULT
+
+    # HMM
+    os.environ["HMM_HOME"]                      = ""
 
 else:
     print """You need to set the environment variables in """ + CODE + """\n"""
@@ -212,7 +245,9 @@ OUTFILE.write("%s%s%s\n" % ("Begin out file ",datetime.datetime.now(), " *******
 
 ##### PATTERNS and CONTROL
 
-# Patterns
+# PATTERNS
+
+# General
 p_comment               = re.compile("^#")
 p_blank                 = re.compile("^$")
 p_help                  = re.compile("help")
@@ -222,14 +257,21 @@ p_detail                = re.compile("detail")
 p_config                = re.compile("config")
 p_outputSubdir          = re.compile("output_subdir='(.*)'")
 p_genomeFile            = re.compile("genome_file='(.*)'")
-p_geneCaller            = re.compile("gene_caller='(.*)'")
-p_psatFile              = re.compile("psat_file='(.*)'")
-p_geneticCode           = re.compile("genetic_code='(\d+)'")
-p_translateOnly         = re.compile("translate_only='(.*)'")
 p_genomeType            = re.compile("genome_type='(.*)'")
 p_name                  = re.compile("name='(.*)'")  
 p_contig                = re.compile("contig='(.*)'")  #*** For now, finished genome, single contig only
 p_species               = re.compile("species='(.*)'")
+
+# Gene calling
+p_geneCaller            = re.compile("gene_caller='(.*)'")
+p_genemarksCalls        = re.compile("genemarks_calls='(.*)'")
+p_glimmerCalls          = re.compile("glimmer_calls='(.*)'")
+p_prodigalCalls         = re.compile("prodigal_calls='(.*)'")
+p_phanotateCalls        = re.compile("phanotate_calls='(.*)'")
+p_geneticCode           = re.compile("genetic_code='(\d+)'")
+p_translateOnly         = re.compile("translate_only='(.*)'")
+
+# Blast
 p_blastpIdentity        = re.compile("blast_identity='(\d+)'")   #*** For now; but should distinguish between blastn/blastp
 p_blastpHitCount        = re.compile("blastp_hit_count='(\d+)'")
 p_blastnHitCount        = re.compile("blastn_hit_count='(\d+)'")
@@ -244,13 +286,25 @@ p_phantomeBlast         = re.compile("phantome_blast='(.*)'")
 p_pvogsBlast            = re.compile("pvogs_blast='(.*)'")
 p_uniparcBlast          = re.compile("uniparc_blast='(.*)'")
 p_refseqGeneBlast       = re.compile("refseq_gene_blast='(.*)'")
-p_genemarksCalls        = re.compile("genemarks_calls='(.*)'")
-p_glimmerCalls          = re.compile("glimmer_calls='(.*)'")
-p_prodigalCalls         = re.compile("prodigal_calls='(.*)'")
-p_theaCalls             = re.compile("thea_calls='(.*)'")
-p_psatAnnotation        = re.compile("psat_annotation='(.*)'")
 
-# Booleans 
+# HMM
+p_hmmProgram            = re.compile("hmm_program='(.*)'")
+p_ncbiVirusHmm          = re.compile("ncbi_virus_hmm='(.*)'")
+p_ncbiVirusProteinHmm   = re.compile("ncbi_virus_protein_hmm='(.*)'")
+p_keggVirusHmm          = re.compile("kegg_virus_hmm='(.*)'")
+p_phantomeHmm           = re.compile("phantome_hmm='(.*)'")
+p_pvogsHmm              = re.compile("pvogs_hmm='(.*)'")
+p_swissprotHmm          = re.compile("swissprot_hmm'(.*)'")
+p_refseqProteinHmm      = re.compile("refseq_protein_hmm'(.*)'")
+p_refseqGeneHmm         = re.compile("refseq_gene_hmm'(.*)'")
+p_uniparcHmm            = re.compile("uniparc_hmm'(.*)'")
+p_nrHmm                 = re.compile("nr_hmm'(.*)'")
+
+# PSAT
+p_psatAnnotation        = re.compile("psat_annotation='(.*)'")
+p_psatFile              = re.compile("psat_file='(.*)'")
+
+# BOOLEANS 
 
 # Verbosity
 CHATTY = True
@@ -265,7 +319,7 @@ TRANSLATE_ONLY = False  # User will specify 'True' in config file if only genera
 
 ##### HELP STRINGS
 
-HELP_STRING = """This code, """ + CODE + """, runs a phage annotation pipeline, comprising 1) gene calling by 4 gene callers (THEA, GeneMarkS, Glimmer3, and Prodigal), followed by identification of closest phage genome by means of blast against an NCBI-phage database, and sequence-based functional annotation by means of blastp against several peptide databases (NR, KEGG-phage, and Phantome). If a PSAT output file is provided, then those annotations are merged with the blast results.\nType: python """ + CODE + """ usage - for more information about constructing the command line.\nType: python """ + CODE + """ detail - for more information about how this code can be run.\n"""
+HELP_STRING = """This code, """ + CODE + """, runs a phage annotation pipeline, comprising 1) gene calling by 4 gene callers (PHANOTATE, GeneMarkS, Glimmer3, and Prodigal), followed by identification of closest phage genome by means of blast against an NCBI-phage database, and sequence-based functional annotation by means of blastp against several peptide databases (NR, NCBI virus protein, KEGG-virus, Phantome, pVOGs, Swissprot, Refseq protein), and HMM search against these same protein databases. If a PSAT output file is provided, then those annotations are merged with the blast results.\nType: python """ + CODE + """ usage - for more information about constructing the command line.\nType: python """ + CODE + """ detail - for more information about how this code can be run.\n"""
 
 INPUT_STRING = """The input files and other parameters for running this code are specified in a configuration file, which is provided as the only input parameter. See sample configuration file (phate.config.sample) for details on how to set up the configuration file.\n"""
 
@@ -325,6 +379,7 @@ genomeType            = GENOME_TYPE
 name                  = NAME
 contigName            = CONTIG_NAME
 species               = SPECIES
+
 blastpIdentity        = BLASTP_IDENTITY_DEFAULT
 blastpHitCount        = BLASTP_HIT_COUNT_DEFAULT
 blastnHitCount        = BLASTN_HIT_COUNT_DEFAULT
@@ -338,10 +393,23 @@ phantomeBlast         = PHANTOME_BLAST_DEFAULT
 pvogsBlast            = PVOGS_BLAST_DEFAULT
 uniparcBlast          = UNIPARC_BLAST_DEFAULT
 swissprotBlast        = SWISSPROT_BLAST_DEFAULT
+
+hmmProgram            = HMM_PROGRAM_DEFAULT
+ncbiVirusHmm          = NCBI_VIRUS_HMM_DEFAULT
+ncbiVirusProteinHmm   = NCBI_VIRUS_PROTEIN_HMM_DEFAULT
+keggVirusHmm          = KEGG_VIRUS_HMM_DEFAULT
+nrHmm                 = NR_HMM_DEFAULT
+refseqGeneHmm         = REFSEQ_GENE_HMM_DEFAULT
+refseqProteinHmm      = REFSEQ_PROTEIN_HMM_DEFAULT
+phantomeHmm           = PHANTOME_HMM_DEFAULT
+pvogsHmm              = PVOGS_HMM_DEFAULT
+uniparcHmm            = UNIPARC_HMM_DEFAULT
+swissprotHmm          = SWISSPROT_HMM_DEFAULT
+
 genemarksCalls        = GENEMARKS_CALLS_DEFAULT
 prodigalCalls         = PRODIGAL_CALLS_DEFAULT
 glimmerCalls          = GLIMMER_CALLS_DEFAULT
-theaCalls             = THEA_CALLS_DEFAULT
+phanotateCalls        = PHANOTATE_CALLS_DEFAULT
 psatAnnotation        = PSAT_ANNOTATION_DEFAULT
 
 # Capture user's configured values
@@ -360,6 +428,7 @@ for cLine in cLines:
     match_name                  = re.search(p_name,cLine)
     match_contig                = re.search(p_contig,cLine)
     match_species               = re.search(p_species,cLine)
+
     match_blastpIdentity        = re.search(p_blastpIdentity,cLine)
     match_blastpHitCount        = re.search(p_blastpHitCount,cLine)
     match_blastnHitCount        = re.search(p_blastnHitCount,cLine)
@@ -374,10 +443,22 @@ for cLine in cLines:
     match_uniparcBlast          = re.search(p_uniparcBlast,cLine)
     match_swissprotBlast        = re.search(p_swissprotBlast,cLine)
     match_refseqGeneBlast       = re.search(p_refseqGeneBlast,cLine)
+
+    match_hmmProgram            = re.search(p_hmmProgram,cLine)
+    match_ncbiVirusHmm          = re.search(p_ncbiVirusHmm,cLine)
+    match_ncbiVirusProteinHmm   = re.search(p_ncbiVirusProteinHmm,cLine)
+    match_keggVirusHmm          = re.search(p_keggVirusHmm,cLine)
+    match_nrHmm                 = re.search(p_nrHmm,cLine)
+    match_refseqProteinHmm      = re.search(p_refseqProteinHmm,cLine)
+    match_phantomeHmm           = re.search(p_phantomeHmm,cLine)
+    match_pvogsHmm              = re.search(p_pvogsHmm,cLine)
+    match_uniparcHmm            = re.search(p_uniparcHmm,cLine)
+    match_swissprotHmm          = re.search(p_swissprotHmm,cLine)
+
     match_genemarksCalls        = re.search(p_genemarksCalls,cLine)
     match_prodigalCalls         = re.search(p_prodigalCalls,cLine)
     match_glimmerCalls          = re.search(p_glimmerCalls,cLine)
-    match_theaCalls             = re.search(p_theaCalls,cLine)
+    match_phanotateCalls        = re.search(p_phanotateCalls,cLine)
     match_psatAnnotation        = re.search(p_psatAnnotation,cLine)
  
     if (match_comment or match_blank):
@@ -419,9 +500,9 @@ for cLine in cLines:
 
     elif match_geneCaller:
         value = match_geneCaller.group(1)
-        if value.lower() == 'thea':
-            geneCaller = 'thea'
-            CONSENSUS_CALLS_FILE = 'thea.cgc'
+        if value.lower() == 'phanotate':
+            geneCaller = 'phanotate'
+            CONSENSUS_CALLS_FILE = 'phanotate.cgc'
         elif value.lower() == 'consensus':
             geneCaller = 'consensus'
             CONSENSUS_CALLS_FILE = 'consensus.cgc'
@@ -462,6 +543,38 @@ for cLine in cLines:
     elif match_species:
         value = match_species.group(1)
         species = value
+
+    # Gene Calls
+
+    elif match_genemarksCalls:
+        value = match_genemarksCalls.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            genemarksCalls = True
+        else:
+            genemarksCalls = False
+
+    elif match_prodigalCalls:
+        value = match_prodigalCalls.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            prodigalCalls = True
+        else:
+            prodigalCalls = False
+
+    elif match_glimmerCalls:
+        value = match_glimmerCalls.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            glimmerCalls = True
+        else:
+            glimmerCalls = False
+
+    elif match_phanotateCalls:
+        value = match_phanotateCalls.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            phanotateCalls = True
+        else:
+            phanotateCalls = False
+
+    # BLAST
 
     elif match_blastpIdentity:
         value = match_blastpIdentity.group(1)
@@ -548,33 +661,80 @@ for cLine in cLines:
         else:
             swissprotBlast = False
 
-    elif match_genemarksCalls:
-        value = match_genemarksCalls.group(1)
-        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
-            genemarksCalls = True
-        else:
-            genemarksCalls = False
+    # HMM
 
-    elif match_prodigalCalls:
-        value = match_prodigalCalls.group(1)
-        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
-            prodigalCalls = True
+    elif match_hmmProgram:
+        value = match_hmmProgram.group(1)
+        if value.lower() == 'jackhmmer':
+            hmmProgram = 'jackhmmer'
         else:
-            prodigalCalls = False
+            print "WARNING: currenly only jackhmmer hmm search is supported; running jackhmmer"
+            hmmProgram = HMM_PROGRAM_DEFAULT 
 
-    elif match_glimmerCalls:
-        value = match_glimmerCalls.group(1)
+    elif match_ncbiVirusHmm:
+        value = match_ncbiVirusHmm.group(1)
         if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
-            glimmerCalls = True
+            ncbiVirusHmm = True
         else:
-            glimmerCalls = False
+            ncbiVirusHmm = False
 
-    elif match_theaCalls:
-        value = match_theaCalls.group(1)
+    elif match_ncbiVirusProteinHmm:
+        value = match_ncbiVirusProteinHmm.group(1)
         if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
-            theaCalls = True
+            ncbiVirusProteinHmm = True
         else:
-            theaCalls = False
+            ncbiVirusProteinHmm = False
+
+    elif match_keggVirusHmm:
+        value = match_keggVirusHmm.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+             keggVirusHmm = True
+        else:
+             keggVirusHmm = False
+
+    elif match_nrHmm:
+        value = match_nrHmm.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+             nrHmm = True
+        else:
+             nrHmm = False 
+
+    elif match_refseqProteinHmm:
+        value = match_refseqProteinHmm.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            refseqProteinHmm = True
+        else:
+            refseqProteinHmm = False
+
+    elif match_phantomeHmm:
+        value = match_phantomeHmm.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            phantomeHmm = True
+        else:
+            phantomeHmm = False 
+
+    elif match_pvogsHmm:
+        value = match_pvogsHmm.group(1)
+        if value.lower() == 'true' or value.lower() == 'yes' or value.lower() == 'on':
+            pvogsHmm = True
+        else:
+            pvogsHmm = False
+
+    elif match_uniparcHmm:
+        value = match_uniparcHmm.group(1).lower()
+        if value == 'true' or value == 'yes' or value == 'on':
+            uniparcHmm = True
+        else:
+            uniparcHmm = False
+
+    elif match_swissprotHmm:
+        value = match_swissprotHmm.group(1).lower()
+        if value == 'true' or value == 'yes' or value == 'on':
+            swissprotHmm = True
+        else:
+            swissprotHmm = False
+
+    # PSAT
 
     elif match_psatAnnotation:
         value = match_psatAnnotation.group(1)
@@ -592,7 +752,14 @@ if DEBUG:
     print "After reading config file, genemarksCalls is", genemarksCalls
     print "After reading config file, ncbiVirusProteinBlast is", ncbiVirusProteinBlast
 
-# Create objects for passing blast and genecall parameters to subordinate codes 
+# Create objects for passing genecall, blast, and hmm parameters to subordinate codes 
+
+genecallParameters = {
+    "genemarksCalls"        : genemarksCalls,
+    "prodigalCalls"         : prodigalCalls,
+    "glimmerCalls"          : glimmerCalls,
+    "phanotateCalls"        : phanotateCalls,
+    }
 
 blastParameters = {
     "ncbiVirusBlast"        : ncbiVirusBlast,
@@ -607,16 +774,23 @@ blastParameters = {
     "swissprotBlast"        : swissprotBlast,
     }
 
-genecallParameters = {
-    "genemarksCalls"     : genemarksCalls,
-    "prodigalCalls"      : prodigalCalls,
-    "glimmerCalls"       : glimmerCalls,
-    "theaCalls"          : theaCalls,
+hmmParameters = {
+    "hmmProgram"            : hmmProgram,
+    "ncbiVirusHmm"          : ncbiVirusHmm,
+    "ncbiVirusProteinHmm"   : ncbiVirusProteinHmm,
+    "keggVirusHmm"          : keggVirusHmm,
+    "phantomeHmm"           : phantomeHmm,
+    "pvogsHmm"              : pvogsHmm,
+    "swissprotHmm"          : swissprotHmm,
+    "refseqProteinHmm"      : refseqProteinHmm,
+    "refseqGeneHmm"         : refseqGeneHmm,
+    "nrHmm"                 : nrHmm,
+    "uniparcHmm"            : uniparcHmm,
     }
 
 # Double check: issue warning if necessary, but continue processing assuming this is what the user intends.
-if GENOME_TYPE == 'PHAGE' and CONSENSUS_CALLS_FILE != 'thea.cgc':
-    print "WARNING: If genome type is phage, the consensus gene-call file should be thea.cgc! Yours is", CONSENSUS_CALLS_FILE
+if GENOME_TYPE == 'PHAGE' and CONSENSUS_CALLS_FILE != 'phanotate.cgc':
+    print "WARNING: If genome type is phage, the consensus gene-call file should be phanotate.cgc! Yours is", CONSENSUS_CALLS_FILE
     LOGFILE.write("%s%s\n" % ("WARNING:  User has selected genome type as phage, but consensus gene-call file as ", CONSENSUS_CALLS_FILE))
 
 CONFIG.close()
@@ -632,18 +806,20 @@ if CHATTY:
     print "GENOME_FILE is", GENOME_FILE
     print "GENE_FILE is", GENE_FILE
     print "PROTEIN_FILE is", PROTEIN_FILE
-    print "geneticCode is", geneticCode 
-    print "TRANSLATE_ONLY is", TRANSLATE_ONLY
-    if PSAT:
-        print "PSAT_FILE is", PSAT_FILE
-    else:
-        print "PSAT_FILE was not provided." 
-    print "geneCaller is", geneCaller 
-    print "CONSENSUS_CALLS_FILE is", CONSENSUS_CALLS_FILE
     print "genomeType is", genomeType 
     print "name is", name 
     print "contigName is", contigName
     print "species is", species 
+
+    print "geneticCode is", geneticCode 
+    print "Status of boolean TRANSLATE_ONLY is", TRANSLATE_ONLY
+    print "geneCaller is", geneCaller 
+    print "genemarksCalls is", genemarksCalls
+    print "prodigalCalls is", prodigalCalls
+    print "glimmerCalls is", glimmerCalls
+    print "phanotateCalls is", phanotateCalls
+    print "CONSENSUS_CALLS_FILE is", CONSENSUS_CALLS_FILE
+
     print "blastpIdentity is", blastpIdentity 
     print "blastpHitCount is", blastpHitCount 
     print "blastnHitCount is", blastnHitCount
@@ -657,11 +833,22 @@ if CHATTY:
     print "pvogsBlast is", pvogsBlast
     print "uniparcBlast is", uniparcBlast
     print "swissprotBlast is", swissprotBlast
-    print "genemarksCalls is", genemarksCalls
-    print "prodigalCalls is", prodigalCalls
-    print "glimmerCalls is", glimmerCalls
-    print "theaCalls is", theaCalls
+
+    print "ncbiVirusHmm is", ncbiVirusHmm
+    print "ncbiVirusProteinHmm is", ncbiVirusProteinHmm
+    print "keggVirusHmm is", keggVirusHmm
+    print "phantomeHmm is", phantomeHmm
+    print "pvogsHmm is", pvogsHmm
+    print "swissprotHmm is", swissprotHmm
+    print "refseqProteinHmm is", refseqProteinHmm
+    print "refseqGeneHmm is", refseqGeneHmm
+    print "nrHmm is", nrHmm
+
     print "psatAnnotation is", psatAnnotation
+    if PSAT:
+        print "PSAT_FILE is", PSAT_FILE
+    else:
+        print "PSAT_FILE was not provided." 
 
 LOGFILE.write("%s\n" % ("Input parameters:"))
 LOGFILE.write("%s%s\n" % ("   PIPELINE_INPUT_DIR: ", PIPELINE_INPUT_DIR))
@@ -670,16 +857,20 @@ LOGFILE.write("%s%s\n" % ("   PIPELINE_OUTPUT_SUBDIR: ", PIPELINE_OUTPUT_SUBDIR)
 LOGFILE.write("%s%s\n" % ("   GENOME_FILE: ", GENOME_FILE))
 LOGFILE.write("%s%s\n" % ("   GENE_FILE: ", GENE_FILE))
 LOGFILE.write("%s%s\n" % ("   PROTEIN_FILE: ", PROTEIN_FILE))
-LOGFILE.write("%s%s\n" % ("   PSAT_FILE: ", PSAT_FILE))
-LOGFILE.write("%s%s\n" % ("   geneticCode: ", geneticCode))
-LOGFILE.write("%s%s\n" % ("   Status of boolean TRANSLATE_ONLY is ",TRANSLATE_ONLY))
-LOGFILE.write("%s%s\n" % ("   Status of boolean PSAT is ",PSAT))
-LOGFILE.write("%s%s\n" % ("   geneCaller is ",geneCaller))
-LOGFILE.write("%s%s\n" % ("   CONSENSUS_CALLS_FILE is ",CONSENSUS_CALLS_FILE))
 LOGFILE.write("%s%s\n" % ("   genomeType is ",genomeType))
 LOGFILE.write("%s%s\n" % ("   name is ",name))
 LOGFILE.write("%s%s\n" % ("   contigName is ",contigName))
 LOGFILE.write("%s%s\n" % ("   species is ",species))
+
+LOGFILE.write("%s%s\n" % ("   geneticCode: ", geneticCode))
+LOGFILE.write("%s%s\n" % ("   Status of boolean TRANSLATE_ONLY is ",TRANSLATE_ONLY))
+LOGFILE.write("%s%s\n" % ("   geneCaller is ",geneCaller))
+LOGFILE.write("%s%s\n" % ("   genemarksCalls is ",genemarksCalls))
+LOGFILE.write("%s%s\n" % ("   prodigalCalls is ",prodigalCalls))
+LOGFILE.write("%s%s\n" % ("   glimmerCalls is ",glimmerCalls))
+LOGFILE.write("%s%s\n" % ("   phanotateCalls is ",phanotateCalls))
+LOGFILE.write("%s%s\n" % ("   CONSENSUS_CALLS_FILE is ",CONSENSUS_CALLS_FILE))
+
 LOGFILE.write("%s%s\n" % ("   blastpIdentity is ",blastpIdentity))
 LOGFILE.write("%s%s\n" % ("   blastpHitCount is ",blastpHitCount))
 LOGFILE.write("%s%s\n" % ("   blastnHitCount is ",blastnHitCount))
@@ -693,11 +884,21 @@ LOGFILE.write("%s%s\n" % ("   phantomeBlast is ",phantomeBlast))
 LOGFILE.write("%s%s\n" % ("   pvogsBlast is ",pvogsBlast))
 LOGFILE.write("%s%s\n" % ("   uniparcBlast is ",uniparcBlast))
 LOGFILE.write("%s%s\n" % ("   swissprotBlast is ",swissprotBlast))
-LOGFILE.write("%s%s\n" % ("   genemarksCalls is ",genemarksCalls))
-LOGFILE.write("%s%s\n" % ("   prodigalCalls is ",prodigalCalls))
-LOGFILE.write("%s%s\n" % ("   glimmerCalls is ",glimmerCalls))
-LOGFILE.write("%s%s\n" % ("   theaCalls is ",theaCalls))
+
+LOGFILE.write("%s%s\n" % ("   ncbiVirusHmm is ",ncbiVirusHmm))
+LOGFILE.write("%s%s\n" % ("   ncbiVirusProteinHmm is ",ncbiVirusProteinHmm))
+LOGFILE.write("%s%s\n" % ("   keggVirusHmm is ",keggVirusHmm))
+LOGFILE.write("%s%s\n" % ("   nrHmm is ",nrHmm))
+LOGFILE.write("%s%s\n" % ("   refseqProteinHmm is ",refseqProteinHmm))
+LOGFILE.write("%s%s\n" % ("   refseqGeneHmm is ",refseqGeneHmm))
+LOGFILE.write("%s%s\n" % ("   phantomeHmm is ",phantomeHmm))
+LOGFILE.write("%s%s\n" % ("   pvogsHmm is ",pvogsHmm))
+LOGFILE.write("%s%s\n" % ("   uniparcHmm is ",uniparcHmm))
+LOGFILE.write("%s%s\n" % ("   swissprotHmm is ",swissprotHmm))
+
+LOGFILE.write("%s%s\n" % ("   Status of boolean PSAT is ",PSAT))
 LOGFILE.write("%s%s\n" % ("   psatAnnotation is ",psatAnnotation))
+LOGFILE.write("%s%s\n" % ("   PSAT_FILE: ", PSAT_FILE))
 
 # Create user's output subdirectory, if doesn't already exist
 
@@ -780,8 +981,8 @@ if genecallParameters["prodigalCalls"]:
     param3 += "prodigal_"
 if genecallParameters["glimmerCalls"]:
     param3 += "glimmer_"
-if genecallParameters["theaCalls"]:
-    param3 += "thea_"
+if genecallParameters["phanotateCalls"]:
+    param3 += "phanotate_"
 
 command = "python " + GENECALL_CODE + ' ' + genomeFile + ' ' + param2 + ' ' + param3 
 
@@ -801,7 +1002,7 @@ if DEBUG:
 # Construct command line parameter string
 
 # First, construct string listing the names of databases to be blasted
-blastParameterString = '_'
+blastParameterString = ''
 if blastParameters['ncbiVirusBlast']:
     blastParameterString += '_ncbiVirusGenome'
 if blastParameters['ncbiVirusProteinBlast']:
@@ -823,13 +1024,38 @@ if blastParameters['uniparcBlast']:
 if blastParameters['swissprotBlast']:
     blastParameterString += '_swissprot'
 
+hmmParameterString = ''
+if hmmParameters['hmmProgram']:
+    hmmParameterString += '_program=' + hmmProgram 
+if hmmParameters['ncbiVirusHmm']:
+    hmmParameterString += '_ncbiVirusGenome'
+if hmmParameters['ncbiVirusProteinHmm']:
+    hmmParameterString += '_ncbiVirusProtein'
+if hmmParameters['nrHmm']:
+    hmmParameterString += '_nr'
+if hmmParameters['keggVirusHmm']:
+    hmmParameterString += '_kegg'
+if hmmParameters['refseqProteinHmm']:
+    hmmParameterString += '_refseqProtein'
+if hmmParameters['refseqGeneHmm']:
+    hmmParameterString += '_refseqGene'
+if hmmParameters['pvogsHmm']:
+    hmmParameterString += '_pvogs'
+if hmmParameters['phantomeHmm']:
+    hmmParameterString += '_phantome'
+if hmmParameters['uniparcHmm']:
+    hmmParameterString += '_uniparc'
+if hmmParameters['swissprotHmm']:
+    hmmParameterString += '_swissprot'
+
 commandRoot1 = "python " + SEQANNOTATION_CODE + " -o " + outputDir  # code and output direction
 commandRoot2 = " -G " + genomeFile        + " -g " + geneFile       + " -p " + proteinFile    # genome files
 commandRoot3 = " -c " + geneCaller        + " -f " + genecallFile   + " -C " + contigName     # gene-call information
 commandRoot4 = " -t " + genomeType        + " -n " + name           + " -s " + species        # genome meta-data
 commandRoot5 = " -i " + blastpIdentity    + " -h " + blastpHitCount + " -H " + blastnHitCount # blast parameters
 commandRoot6 = " -d " + blastParameterString                                                  # databases to blast against
-commandRoot = commandRoot1 + commandRoot2 + commandRoot3 + commandRoot4 + commandRoot5 + commandRoot6
+commandRoot7 = " -m " + hmmParameterString                                                    # program and databases for hmm search
+commandRoot = commandRoot1 + commandRoot2 + commandRoot3 + commandRoot4 + commandRoot5 + commandRoot6 + commandRoot7
 
 # As appropriate, append additional parameters
 if TRANSLATE_ONLY:

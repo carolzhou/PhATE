@@ -85,7 +85,7 @@ class GeneCall(object):
 class GeneCallSet(object):
 
     def __init__(self):
-        self.geneCaller     = ""  # Typically, 'GeneMark', 'Glimmer', 'Prodigal', 'RAST', 'THEA'
+        self.geneCaller     = ""  # Typically, 'GeneMark', 'Glimmer', 'Prodigal', 'RAST', 'PHANOTATE'
         self.geneCount      = 0
         self.geneCallList   = []  # list of GeneCall objects 
         self.geneCall_obj   = GeneCall()

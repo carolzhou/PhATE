@@ -54,9 +54,9 @@ pVOGheaderFile       = PVOGS_BASE_DIR      + "pVOGs_headers.lst"
 class annotationRecord(object):
 
     def __init__(self):
-        self.source            = "unknown" # Typically RAST, LLNL, PhAnToMe, GeneMark, Glimmer, Prodigal, THEA, KEGG, NCBI, pVOGs 
-        self.method            = "unknown" # Typcially RAST, PSAT, PFP, PhiRAST, JGI, SDSU, Blast, blastp, blastn 
-        self.annotationType    = "unknown" # gene, mRNA, polypeptide, CDS, functional, homology
+        self.source            = "unknown" # Typically RAST, LLNL, PhAnToMe, GeneMark, Glimmer, Prodigal, PHANOTATE, KEGG, NCBI, pVOGs 
+        self.method            = "unknown" # Typcially RAST, PSAT, PFP, PhiRAST, JGI, SDSU, BLAST, blastp, blastn, HMM, jackhmmer 
+        self.annotationType    = "unknown" # gene, mRNA, polypeptide, CDS, functional, homology, hmm
         self.pVOGlist          = []        # list of pVOG identifiers (identified via blast hit)
         self.contig            = "unknown"
         self.start             = 0

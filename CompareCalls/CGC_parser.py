@@ -74,16 +74,17 @@ LOGFILE = open(logfile,"w")
 
 ##### PATTERNS
 
-p_comment  = re.compile('^#')
-p_empty    = re.compile('^$')  # blank line
-p_prodigal = re.compile('[Pp][Rr][Oo][Dd][Ii][Gg][Aa][Ll]')
-p_genemark = re.compile('[Gg][Ee][Nn][Ee][Mm][Aa][Rr][Kk]')
-p_glimmer  = re.compile('[Gg][Ll][Ii][Mm]+[Ee][Rr]')
-p_rast     = re.compile('[Rr][Aa][Ss][Tt]')
-p_thea     = re.compile('[Tt][Hh][Ee][Aa]')
-p_phate    = re.compile('[Pp][Hh][Aa][Tt][Ee]')  # THEA, actually
-p_gff3     = re.compile('[Gg][Ff][Ff]')  # take gff or gff3
-p_genbank  = re.compile('[Gg][Ee][Nn][Bb][Aa][Nn][Kk]')
+p_comment   = re.compile('^#')
+p_empty     = re.compile('^$')  # blank line
+p_prodigal  = re.compile('[Pp][Rr][Oo][Dd][Ii][Gg][Aa][Ll]')
+p_genemark  = re.compile('[Gg][Ee][Nn][Ee][Mm][Aa][Rr][Kk]')
+p_glimmer   = re.compile('[Gg][Ll][Ii][Mm]+[Ee][Rr]')
+p_rast      = re.compile('[Rr][Aa][Ss][Tt]')
+p_thea      = re.compile('[Tt][Hh][Ee][Aa]')
+p_phate     = re.compile('[Pp][Hh][Aa][Tt][Ee]')  # PHANOTATE, actually
+p_phanotate = re.compile('[Pp][Hh][Aa][Nn][Oo][Tt][Aa][Tt][Ee]')
+p_gff3      = re.compile('[Gg][Ff][Ff]')  # take gff or gff3
+p_genbank   = re.compile('[Gg][Ee][Nn][Bb][Aa][Nn][Kk]')
 
 ##### IDIOMS
 
@@ -96,7 +97,7 @@ HELP_STRING = "Script " + CODE + " inputs the name of a gene caller plus the out
 
 USAGE_STRING = "Usage:  python " + CODE + " <geneCaller_name> <geneCall_filename> (optional)<output_filename>\n"
 
-INPUT_STRING = "You may enter the name of a gene caller (e.g., Prodigal, GeneMark, Glimmer, RAST, THEA), followed by the gene-call file that the program produced. For Prodigal, use the Name.genes.sco file. For GeneMarkS, use the Name.fasta.lst file. For Glimmer2, use the Name.g2.coord file, but for Glimmer3 use the run3.coords file. For RAST, use gff3 output. For THEA... TBD.\n"
+INPUT_STRING = "You may enter the name of a gene caller (e.g., Prodigal, GeneMark, Glimmer, RAST, PHANOTATE), followed by the gene-call file that the program produced. For Prodigal, use the Name.genes.sco file. For GeneMarkS, use the Name.fasta.lst file. For Glimmer2, use the Name.g2.coord file, but for Glimmer3 use the run3.coords file. For RAST, use gff3 output. For PHANOTATE... TBD.\n"
 
 ACCEPTABLE_ARG_COUNT = (2,3,4)  # 2 if 'help'|'usage'|'input', or 3 if gene-caller and gene-caller.out, 4 if optional output file
 
@@ -398,7 +399,7 @@ def ProcessProdigal(fLines,OUT):
     return
 
 #def ProcessPhate(fLines,OUT):      # SDSU code
-def ProcessTHEA(fLines,OUT):      # SDSU code
+def ProcessPHANOTATE(fLines,OUT):      # SDSU code
     p_comment  = re.compile('^#')
     p_dataLine = re.compile('^\d')
     geneNo = 0; contig = 'unknown'; strand = '?'; leftEnd = 0; rightEnd = 0; length = 0; count = 0; protein = 'unknown'; temp = ''
@@ -441,6 +442,7 @@ match_genemark    = re.search(p_genemark,geneCaller)
 match_prodigal    = re.search(p_prodigal,geneCaller)
 match_rast        = re.search(p_rast,geneCaller)
 match_thea        = re.search(p_thea,geneCaller)
+match_phanotate   = re.search(p_phanotate,geneCaller)
 match_gff3        = re.search(p_gff3,geneCaller)
 match_genbank     = re.search(p_genbank,geneCaller)
 match_phate       = re.search(p_phate,geneCaller)
@@ -463,10 +465,12 @@ elif match_prodigal:
     ProcessProdigal(fileLines,OUTFILE)
 elif match_rast:
     ProcessRAST(fileLines,OUTFILE)
-elif match_thea:
-    ProcessTHEA(fileLines,OUTFILE)
+elif match_phanotate:
+    ProcessPHANOTATE(fileLines,OUTFILE)
 elif match_phate:
-    ProcessTHEA(fileLines,OUTFILE)
+    ProcessPHANOTATE(fileLines,OUTFILE)
+elif match_phanotate:
+    ProcessPHANOTATE(fileLines,OUTFILE)
 elif match_gff3:
     ProcessGFF3(fileLines,OUTFILE)
 elif match_genbank:

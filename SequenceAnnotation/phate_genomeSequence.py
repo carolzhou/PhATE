@@ -170,16 +170,16 @@ class genome(object):
                 contig = geneCallInfo['contig']
             if 'geneCaller' in geneCallInfo:
                 gc = geneCallInfo['geneCaller'].lower()
-                match_thea      = re.search('thea',gc)
-                match_THEA      = re.search('THEA',gc)
+                match_phanotate = re.search('phanotate',gc)
+                match_PHANOTATE = re.search('PHANOTATE',gc)
                 match_rast      = re.search('rast',gc)
                 match_glimmer2  = re.search('glimmer2',gc)
                 match_glimmer3  = re.search('glimmer3',gc)
                 match_prodigal  = re.search('prodigal',gc)
                 match_geneMarkS = re.search('genemarks',gc)
                 match_consensus = re.search('consensus',gc)
-                if match_thea or match_THEA:
-                    geneCaller = 'thea'
+                if match_phanotate or match_PHANOTATE:
+                    geneCaller = 'phanotate'
                 elif match_rast:
                     geneCaller = 'rast'
                 elif match_glimmer2:
@@ -210,7 +210,7 @@ class genome(object):
                 geneNo   = columns[0]
                 strand   = columns[1]
                 length   = columns[4]
-                contig   = columns[5]  #*** NOTE: contig name should be in THEA gene call file, but currently not
+                contig   = columns[5]  #*** NOTE: contig name should be in PHANOTATE gene call file, but currently not
                 geneName = contig + '_' + geneCaller + '_' + geneNo + '_geneCall'
 
                 # Remove '<' and '>' symbols in leftEnd, rightEnd, if present
@@ -246,7 +246,7 @@ class genome(object):
                     newGene.strand = 'x'
                     print "ERROR: anomalous strand setting in processGeneCalls, phate_genomeSequence module:", newGene.strand
 
-                #*** BANDAID - to compensate for THEA sometimes starting gene at 0
+                #*** BANDAID - to compensate for PHANOTATE sometimes starting gene at 0
                 if newGene.start == 0:
                     newGene.start = 1
 

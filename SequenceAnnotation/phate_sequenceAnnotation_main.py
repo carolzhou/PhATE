@@ -22,9 +22,9 @@ import sys, os, re, string, copy
 from subprocess import call
 
 # Defaults/Parameters
-GENE_CALLER            = 'thea'   # Default; can be configured by user
-GENOME_TYPE            = 'phage'  # Default; can be configured by user
-EVALUE_MIN             = 10       # This and the following blast parameters might be parameterized, eventually
+GENE_CALLER            = 'phanotate'   # Default; can be configured by user
+GENOME_TYPE            = 'phage'       # Default; can be configured by user
+EVALUE_MIN             = 10            # This and the following blast parameters might be parameterized, eventually
 EVALUE_SELECT          = 10
 XML_OUT_FORMAT         = 5
 LIST_OUT_FORMAT        = 7
@@ -33,6 +33,7 @@ OVERHANG               = 0.1
 GENOME_IDENTITY_MIN    = 20
 GENOME_IDENTITY_SELECT = 20
 GENETIC_CODE           = 11
+HMM_PROGRAM            = 'jackhmmer'   # Default; can be configured by user
 
 # Constants
 CODE_BASE = "phate_sequenceAnnotation_main"
@@ -66,6 +67,7 @@ MAX_BLASTN_HIT_COUNT          = os.environ["MAX_BLASTN_HIT_COUNT"]  # Sets an up
 BLASTP_IDENTITY_DEFAULT       = os.environ["BLASTP_IDENTITY_DEFAULT"]
 BLASTP_HIT_COUNT_DEFAULT      = os.environ["BLASTP_HIT_COUNT_DEFAULT"]
 BLASTN_HIT_COUNT_DEFAULT      = os.environ["BLASTN_HIT_COUNT_DEFAULT"]
+HMM_HOME                      = os.environ["HMM_HOME"]
 
 # Now import subordinate modules that need to read the above env vars
 
@@ -73,6 +75,7 @@ import phate_fastaSequence  # generic fasta sequence module
 import phate_genomeSequence # manages genomes to be annotated
 import phate_annotation     # records annotations, including gene-call info and secondary annotations
 import phate_blast          # uses phate_blastAnalysis to handle blast requests 
+import phate_hmm            # runs hmm search against specified database(s) 
 
 ##### FILES
 
@@ -81,7 +84,7 @@ outfile = ""  # will be constructed using user's specified output subdir
 
 outputDir       = ""         # user-specified output subdirectory
 infile_genome   = ""         # user-provided file containing the genome sequence that was gene-called
-infile_geneCall = ""         # gene-call file (output from a gene caller; THEA for now)
+infile_geneCall = ""         # gene-call file (output from a gene caller; PHANOTATE for now)
 infile_gene     = ""         # genes to be blasted (not yet in service)
 infile_protein  = ""         # user-provided file containing protein fasta sequences
 infile_psat     = ""         # user-provided file containing PSAT annotation output
@@ -91,17 +94,18 @@ infile_psat     = ""         # user-provided file containing PSAT annotation out
 genomeType      = GENOME_TYPE # user-provided, typically 'phage'
 name            = "unknown"   # user-provided, name of current genome, e.g., 'LYP215'
 species         = "unknown"   # user-provided, e.g., 'YpPhage_LYP215'
-contigName      = "unknown"   # #*** temporary; needed due to THEA not listing contig name
+contigName      = "unknown"   # #*** temporary; needed due to  not listing contig name
 configFile      = "unknown"   # must be passed by calling code (phate_runPipeline.py)
 geneCaller      = GENE_CALLER # default, unless changed
 blastpIdentity  = BLASTP_IDENTITY_DEFAULT  # integer percent identity cutoff
 blastpHitCount  = BLASTP_HIT_COUNT_DEFAULT # number of top hits to capture
 blastnHitCount  = BLASTN_HIT_COUNT_DEFAULT # number of top blastn hits to capture 
 geneticCode     = GENETIC_CODE # default, unless changed
+hmmProgram      = HMM_PROGRAM # default, unless changed by input parameter
 
 ##### BOOLEANS
 
-# Assume turned 'off', unless input string indicates otherwise
+# Dataases: assume turned 'off', unless input string indicates otherwise
 NCBI_VIRUS_BLAST         = False
 NCBI_VIRUS_PROTEIN_BLAST = False
 NR_BLAST                 = False
@@ -112,49 +116,62 @@ PHANTOME_BLAST           = False
 PVOGS_BLAST              = False
 UNIPARC_BLAST            = False
 SWISSPROT_BLAST          = False
+NCBI_VIRUS_HMM           = False
+NCBI_VIRUS_PROTEIN_HMM   = False
+NR_HMM                   = False
+KEGG_VIRUS_HMM           = False
+REFSEQ_PROTEIN_HMM       = False
+REFSEQ_GENE_HMM          = False
+PHANTOME_HMM             = False
+PVOGS_HMM                = False
+UNIPARC_HMM              = False
+SWISSPROT_HMM            = False
 
 ##### PATTERNS and CONTROL
 
 # Input parameters 
 
 # parameter tags
-p_outputDirParam       = re.compile('^-o')   # outout directory (e.g., 'LYP215')
-p_genomeFileParam      = re.compile('^-G')   # Genome with a capital 'G'
-p_geneFileParam        = re.compile('^-g')   # gene with a lower-case 'g'
-p_proteinFileParam     = re.compile('^-p')   # protein or peptide
-p_geneCallerParam      = re.compile('^-c')   # gene caller
-p_geneticCodeParam     = re.compile('^-e')   # genetic code
-p_geneCallFileParam    = re.compile('^-f')   # gene calls file
-p_contigNameParam      = re.compile('^-C')   # Contig name #*** TEMPORARY until code handles draft genomes 
-p_genomeTypeParam      = re.compile('^-t')   # genome type (e.g., 'phage', 'bacterium')
-p_nameParam            = re.compile('^-n')   # genome name (e.g., 'my_fave_Yp_genome')
-p_speciesParam         = re.compile('^-s')   # species (e.g., 'Y_pestis') 
-p_blastpIdentityParam  = re.compile('^-i')   # blastp identity cutoff
-p_blastpHitCountParam  = re.compile('^-h')   # blastp top hit count
-p_blastnHitCountParam  = re.compile('^-H')   # blastn top hit count
-p_translateOnlyParam   = re.compile('^-x')   # if user passes 'true' => get genes, translate, compare, then stop before annotation
-p_psatFileParam        = re.compile('^-P')   # PSAT output file, indicated by capital 'P'
-p_blastDBsStringParam  = re.compile('^-d')   # string listing databases to blast against
+p_outputDirParam            = re.compile('^-o')   # outout directory (e.g., 'LYP215')
+p_genomeFileParam           = re.compile('^-G')   # Genome with a capital 'G'
+p_geneFileParam             = re.compile('^-g')   # gene with a lower-case 'g'
+p_proteinFileParam          = re.compile('^-p')   # protein or peptide
+p_geneCallerParam           = re.compile('^-c')   # gene caller
+p_geneticCodeParam          = re.compile('^-e')   # genetic code
+p_geneCallFileParam         = re.compile('^-f')   # gene calls file
+p_contigNameParam           = re.compile('^-C')   # Contig name #*** TEMPORARY until code handles draft genomes 
+p_genomeTypeParam           = re.compile('^-t')   # genome type (e.g., 'phage', 'bacterium')
+p_nameParam                 = re.compile('^-n')   # genome name (e.g., 'my_fave_Yp_genome')
+p_speciesParam              = re.compile('^-s')   # species (e.g., 'Y_pestis') 
+p_blastpIdentityParam       = re.compile('^-i')   # blastp identity cutoff
+p_blastpHitCountParam       = re.compile('^-h')   # blastp top hit count
+p_blastnHitCountParam       = re.compile('^-H')   # blastn top hit count
+p_translateOnlyParam        = re.compile('^-x')   # if user passes 'true' => get genes, translate, compare, then stop before annotation
+p_psatFileParam             = re.compile('^-P')   # PSAT output file, indicated by capital 'P'
+p_blastDBsStringParam       = re.compile('^-d')   # string listing database(s) to blast against
+p_hmmProgramDBsStringParam  = re.compile('^-m')   # string listing hmm program and database(s) to search against
 
-# Parts of input string naming databases to blast against
-p_ncbiVirus            = re.compile('ncbiVirusGenome')  # part of input string naming databases to blast against
-p_ncbiVirusProtein     = re.compile('ncbiVirusProtein') # part of input string naming databases to blast against
-p_nr                   = re.compile('nr')               # part of input string naming databases to blast against
-p_keggVirus            = re.compile('kegg')             # part of input string naming databases to blast against
-p_refseqProtein        = re.compile('refseqP')          # part of input string naming databases to blast against
-p_refseqGene           = re.compile('refseqG')          # part of input string naming databases to blast against
-p_phantome             = re.compile('phantome')         # part of input string naming databases to blast against
-p_pvogs                = re.compile('pvogs')            # part of input string naming databases to blast against
-p_uniparc              = re.compile('uniparc')          # part of input string naming databases to blast against
-p_swissprot            = re.compile('swissprot')        # part of input string naming databases to blast against
+# Parts of input string naming databases to blast or hmm-search against
+p_hmmProgram           = re.compile('program=([\w\d]+)') # name of hmm program to use in hmm search
+p_ncbiVirus            = re.compile('ncbiVirusGenome')   # part of input string naming databases to blast against
+p_ncbiVirusProtein     = re.compile('ncbiVirusProtein')  # part of input string naming databases to blast against
+p_nr                   = re.compile('nr')                # part of input string naming databases to blast against
+p_keggVirus            = re.compile('kegg')              # part of input string naming databases to blast against
+p_refseqProtein        = re.compile('refseqP')           # part of input string naming databases to blast against
+p_refseqGene           = re.compile('refseqG')           # part of input string naming databases to blast against
+p_phantome             = re.compile('phantome')          # part of input string naming databases to blast against
+p_pvogs                = re.compile('pvogs')             # part of input string naming databases to blast against
+p_uniparc              = re.compile('uniparc')           # part of input string naming databases to blast against
+p_swissprot            = re.compile('swissprot')         # part of input string naming databases to blast against
 
 # Initialize
 TRANSLATE_ONLY = False
-PSAT = False
+HMM_SEARCH     = False
+PSAT           = False
 
 # Other patterns
-p_comment            = re.compile('^#')
-p_blank              = re.compile("^$")
+p_comment  = re.compile('^#')
+p_blank    = re.compile("^$")
 
 # Verbosity
 
@@ -177,24 +194,25 @@ argCount = len(argList)
 for i in xrange(0,argCount):
 
     # Look for parameter tags
-    match_outputDirParam       = re.search(p_outputDirParam,       argList[i])
-    match_genomeFileParam      = re.search(p_genomeFileParam,      argList[i])
-    match_geneFileParam        = re.search(p_geneFileParam,        argList[i])
-    match_proteinFileParam     = re.search(p_proteinFileParam,     argList[i])
-    match_geneCallerParam      = re.search(p_geneCallerParam,      argList[i])
-    match_geneticCodeParam     = re.search(p_geneticCodeParam,     argList[i])
-    match_geneCallFileParam    = re.search(p_geneCallFileParam,    argList[i])
-    match_contigNameParam      = re.search(p_contigNameParam,      argList[i])
-    match_genomeTypeParam      = re.search(p_genomeTypeParam,      argList[i])
-    match_nameParam            = re.search(p_nameParam,            argList[i])
-    match_contigNameParam      = re.search(p_contigNameParam,      argList[i])
-    match_speciesParam         = re.search(p_speciesParam,         argList[i])
-    match_blastpIdentityParam  = re.search(p_blastpIdentityParam,  argList[i])
-    match_blastpHitCountParam  = re.search(p_blastpHitCountParam,  argList[i])
-    match_blastnHitCountParam  = re.search(p_blastnHitCountParam,  argList[i])
-    match_translateOnlyParam   = re.search(p_translateOnlyParam,   argList[i])
-    match_psatFileParam        = re.search(p_psatFileParam,        argList[i])
-    match_blastDBsStringParam  = re.search(p_blastDBsStringParam,  argList[i])
+    match_outputDirParam           = re.search(p_outputDirParam,           argList[i])
+    match_genomeFileParam          = re.search(p_genomeFileParam,          argList[i])
+    match_geneFileParam            = re.search(p_geneFileParam,            argList[i])
+    match_proteinFileParam         = re.search(p_proteinFileParam,         argList[i])
+    match_geneCallerParam          = re.search(p_geneCallerParam,          argList[i])
+    match_geneticCodeParam         = re.search(p_geneticCodeParam,         argList[i])
+    match_geneCallFileParam        = re.search(p_geneCallFileParam,        argList[i])
+    match_contigNameParam          = re.search(p_contigNameParam,          argList[i])
+    match_genomeTypeParam          = re.search(p_genomeTypeParam,          argList[i])
+    match_nameParam                = re.search(p_nameParam,                argList[i])
+    match_contigNameParam          = re.search(p_contigNameParam,          argList[i])
+    match_speciesParam             = re.search(p_speciesParam,             argList[i])
+    match_blastpIdentityParam      = re.search(p_blastpIdentityParam,      argList[i])
+    match_blastpHitCountParam      = re.search(p_blastpHitCountParam,      argList[i])
+    match_blastnHitCountParam      = re.search(p_blastnHitCountParam,      argList[i])
+    match_translateOnlyParam       = re.search(p_translateOnlyParam,       argList[i])
+    match_psatFileParam            = re.search(p_psatFileParam,            argList[i])
+    match_blastDBsStringParam      = re.search(p_blastDBsStringParam,      argList[i])
+    match_hmmProgramDBsStringParam = re.search(p_hmmProgramDBsStringParam, argList[i])
 
     ### Capture parameters 
 
@@ -234,7 +252,7 @@ for i in xrange(0,argCount):
         if i < argCount:
             geneCaller = argList[i+1]
 
-    if match_contigNameParam:  #*** TEMPORARY until THEA reports contig name
+    if match_contigNameParam:  #*** TEMPORARY until PHANOTATE reports contig name
         CONTIG = True
         if i < argCount:
             contigName = argList[i+1]
@@ -316,6 +334,44 @@ for i in xrange(0,argCount):
                 UNIPARC_BLAST = True
             if match_swissprot:
                 SWISSPROT_BLAST = True
+
+    if match_hmmProgramDBsStringParam:
+        if i < argCount:
+            value = argList[i+1]
+            match_hmmProgram       = re.search(p_hmmProgram,value)
+            match_ncbiVirus        = re.search(p_ncbiVirus,value)
+            match_ncbiVirusProtein = re.search(p_ncbiVirusProtein,value)
+            match_nr               = re.search(p_nr,value)
+            match_kegg             = re.search(p_keggVirus,value)
+            match_refseqProtein    = re.search(p_refseqProtein,value)
+            match_refseqGene       = re.search(p_refseqGene,value)
+            match_phantome         = re.search(p_phantome,value)
+            match_pvogs            = re.search(p_pvogs,value)
+            match_uniparc          = re.search(p_uniparc,value)
+            match_swissprot        = re.search(p_swissprot,value)
+            if match_hmmProgram:
+                hmmProgram = match_hmmProgram.group(1)
+                HMM_SEARCH = True
+            if match_ncbiVirus:
+                NCBI_VIRUS_HMM = True
+            if match_ncbiVirusProtein:
+                NCBI_VIRUS_PROTEIN_HMM = True
+            if match_nr:
+                NR_HMM = True
+            if match_kegg:
+                KEGG_VIRUS_HMM = True
+            if match_refseqProtein:
+                REFSEQ_PROTEIN_HMM = True
+            if match_refseqGene:
+                REFSEQ_GENE_HMM = True
+            if match_phantome:
+                PHANTOME_HMM = True
+            if match_pvogs:
+                PVOGS_HMM = True 
+            if match_uniparc:
+                UNIPARC_HMM = True
+            if match_swissprot:
+                SWISSPROT_HMM = True
 
 # Open and Check files
 
@@ -410,6 +466,17 @@ LOGFILE_H.write("%s%s\n" % ("PHANTOME_BLAST is ",PHANTOME_BLAST))
 LOGFILE_H.write("%s%s\n" % ("PVOGS_BLAST is ",PVOGS_BLAST))
 LOGFILE_H.write("%s%s\n" % ("UNIPARC_BLAST is ",UNIPARC_BLAST))
 LOGFILE_H.write("%s%s\n" % ("SWISSPROT_BLAST is ",SWISSPROT_BLAST))
+LOGFILE_H.write("%s%s\n" % ("hmmProgram is ",hmmProgram))
+LOGFILE_H.write("%s%s\n" % ("NCBI_VIRUS_HMM is ",NCBI_VIRUS_HMM))
+LOGFILE_H.write("%s%s\n" % ("NCBI_VIRUS_PROTEIN_HMM is ",NCBI_VIRUS_PROTEIN_HMM))
+LOGFILE_H.write("%s%s\n" % ("KEGG_VIRUS_HMM is ",KEGG_VIRUS_HMM))
+LOGFILE_H.write("%s%s\n" % ("NR_HMM is ",NR_HMM))
+LOGFILE_H.write("%s%s\n" % ("REFSEQ_PROTEIN_HMM is ",REFSEQ_PROTEIN_HMM))
+LOGFILE_H.write("%s%s\n" % ("REFSEQ_GENE_HMM is ",REFSEQ_GENE_HMM))
+LOGFILE_H.write("%s%s\n" % ("PHANTOME_HMM is ",PHANTOME_HMM))
+LOGFILE_H.write("%s%s\n" % ("PVOGS_HMM is ",PVOGS_HMM))
+LOGFILE_H.write("%s%s\n" % ("UNIPARC_HMM is ",UNIPARC_HMM))
+LOGFILE_H.write("%s%s\n" % ("SWISSPROT_HMM is ",SWISSPROT_HMM))
 
 # Communicate to user
 if CHATTY:
@@ -448,6 +515,17 @@ if CHATTY:
     print "PVOGS_BLAST is", PVOGS_BLAST
     print "UNIPARC_BLAST is", UNIPARC_BLAST
     print "SWISSRPOT_BLAST is", SWISSPROT_BLAST
+    print "hmmProgram is", hmmProgram
+    print "NCBI_VIRUS_HMM is", NCBI_VIRUS_HMM
+    print "NCBI_VIRUS_PROTEIN_HMM is", NCBI_VIRUS_PROTEIN_HMM
+    print "KEGG_VIRUS_HMM is", KEGG_VIRUS_HMM
+    print "NR_HMM is", NR_HMM
+    print "REFSEQ_PROTEIN_HMM is", REFSEQ_PROTEIN_HMM
+    print "REFSEQ_GENE_HMM is", REFSEQ_GENE_HMM
+    print "PHANTOME_HMM is", PHANTOME_HMM
+    print "PVOGS_HMM is", PVOGS_HMM
+    print "UNIPARC_HMM is", UNIPARC_HMM
+    print "SWISSPROT_HMM is", SWISSPROT_HMM
 
 ##### BEGIN MAIN 
 
@@ -455,7 +533,7 @@ if CHATTY:
 geneCallInfo = {      # For passing info to genomeSequence module
     'geneCaller'           : geneCaller, 
     'geneCallFile'         : infile_geneCall, 
-    'contig'               : contigName, #*** TEMPORARY: Should be included as 5th column of geneCall file, but THEA does not report this yet
+    'contig'               : contigName, #*** TEMPORARY: Should be included as 5th column of geneCall file, but PHANOTATE does not report this yet
     #'peptideFile'          : infile_protein, # file into which translated peptides are to be written
     'name'                 : name,
 }
@@ -533,7 +611,18 @@ else:
     except:
         os.mkdir(blastOutputDir)
 
-    ##### Run blast against whatever sequences/databases we have:  genome, gene, phage databases
+    # Create an hmm object and set parameters
+    LOGFILE_H.write("%s\n" % ("Creating an hmm object"))
+    hmm = phate_hmm.multiHMM()
+
+    # Create directory for hmm output
+    hmmOutputDir = outputDir + '/HMM/'
+    try:
+        os.stat(hmmOutputDir)
+    except:
+        os.mkdir(hmmOutputDir)
+
+    ##### Run blast against whatever sequences/databases we have:  genome, gene, protein, phage databases
 
     # GENOME BLAST
 
@@ -663,6 +752,57 @@ else:
     LOGFILE_H.write("%s\n" % ("Protein blast complete."))
 
     # Write out pVOGs sequences to enable alignments
+
+    # HMM SEARCH
+
+    # Create hmm output directory for genome hmm search
+    genomeHmmOutputDir = hmmOutputDir + 'Genome/'
+    try:
+        os.stat(genomeHmmOutputDir)
+    except:
+        os.mkdir(genomeHmmOutputDir)
+    # Done for now; genome hmm search not yet in service
+
+    # Create hmm output directory for gene hmm search
+    geneHmmOutputDir = hmmOutputDir + 'Gene/'
+    try:
+        os.stat(geneHmmOutputDir)
+    except:
+        os.mkdir(geneHmmOutputDir)
+    # Done for now; gene hmm search not yet in service
+
+    # Create hmm output directory for protein hmm search
+    proteinHmmOutputDir = hmmOutputDir + 'Protein/'
+    try:
+        os.stat(proteinHmmOutputDir)
+    except:
+        os.mkdir(proteinHmmOutputDir)
+
+    # Prepare for protein hmm search
+    myParamSet = {
+        'hmmProgram'            : hmmProgram,
+        'geneCallDir'           : outputDir,
+        'hmmOutDir'             : proteinHmmOutputDir,
+        'pvogsOutDir'           : proteinHmmOutputDir,
+        'nrHmm'                 : NR_HMM,
+        'keggVirusHmm'          : KEGG_VIRUS_HMM,
+        'refseqProteinHmm'      : REFSEQ_PROTEIN_HMM,
+        'phantomeHmm'           : PHANTOME_HMM,
+        'pvogsHmm'              : PVOGS_HMM,
+        'uniparcHmm'            : UNIPARC_HMM,
+        'swissprotHmm'          : SWISSPROT_HMM,
+        'ncbiVirusHmm'          : NCBI_VIRUS_HMM,
+        'ncbiVirusProteinHmm'   : NCBI_VIRUS_PROTEIN_HMM,
+    }
+    hmm.setHmmParameters(myParamSet)
+    hmm.setHmmProgram(hmmProgram)  #*** redundant
+
+    if CHATTY:
+        print "Running Hmm search against protein database(s)..."
+    LOGFILE_H.write("%s\n" % ("Running Hmm search against protein database(s)"))
+
+    # Run protein hmm search
+    hmm.runHmm(myGenome.proteinSet,'protein')
 
     # ADD PSAT ANNOTATIONS  
 

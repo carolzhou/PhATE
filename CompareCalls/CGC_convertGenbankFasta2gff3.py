@@ -7,7 +7,7 @@
 # Programmer: Carol Zhou
 #
 # Description:  Accepts a genbank protein fasta file and outputs a GFF3-formatted list of genes 
-#    Use this script when you need to input genbank's proteins into CGC to compare with THEA's (or other).
+#    Use this script when you need to input genbank's proteins into CGC to compare with PHANOTATE's (or other).
 #    This script will extract information from genbank's header, and construct a GFF3-formatted list of genes.
 #    You need to input:
 #         genbank protein fasta file

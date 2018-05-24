@@ -41,13 +41,13 @@ DEBUG = True
 GENEMARKS_CALLS = False   
 PRODIGAL_CALLS  = False 
 GLIMMER_CALLS   = False 
-THEA_CALLS      = False 
+PHANOTATE_CALLS = False 
 
 # patterns
 p_genemarks = re.compile('[gG][eE][nN][eE][mM][aA][rR][kK]')
 p_glimmer   = re.compile('[gG][lL][iI][mM][mM][eE][rR]')
 p_prodigal  = re.compile('[pP][rR][oO][dD][iI][gG][aA][lL]')
-p_thea      = re.compile('[tT][hH][eE][aA]')
+p_phanotate = re.compile('[pP][hH][aA][nN][oO][tT][aA][tT][eE]')
 
 ########## HOUSEKEEPING ##########
 
@@ -55,7 +55,7 @@ p_thea      = re.compile('[tT][hH][eE][aA]')
 prodigalPath  = os.environ["PRODIGAL_PATH"]
 glimmerPath   = os.environ["GLIMMER_PATH"] 
 geneMarkSPath = os.environ["GENEMARKS_PATH"]
-theaPath      = os.environ["THEA_PATH"]
+phanotatePath = os.environ["PHANOTATE_PATH"]
 cgcPath       = os.environ["CGC_PATH"]
 
 # Data Structures
@@ -85,15 +85,15 @@ if len(sys.argv) == 4:
     match_genemarks = re.search(p_genemarks,genecallParams)
     match_prodigal  = re.search(p_prodigal, genecallParams)
     match_glimmer   = re.search(p_glimmer,  genecallParams)
-    match_thea      = re.search(p_thea,     genecallParams)
+    match_phanotate = re.search(p_phanotate,genecallParams)
     if match_genemarks:
         GENEMARKS_CALLS = True 
     if match_prodigal:
         PRODIGAL_CALLS = True
     if match_glimmer:
         GLIMMER_CALLS = True 
-    if match_thea:
-        THEA_CALLS = True 
+    if match_phanotate:
+        PHANOTATE_CALLS = True 
 
 #logfile = open("./phate_genecallPhage.log","w")
 logfilefullpath = outputFolder + "phate_genecallPhage.log"
@@ -112,10 +112,10 @@ logfile.write("%s%s\n" % ("results file is ",resultsFile))
 logfile.write("%s%s\n" % ("GENEMARKS_CALLS is ",GENEMARKS_CALLS))
 logfile.write("%s%s\n" % ("PRODIGAL_CALLS is ",PRODIGAL_CALLS))
 logfile.write("%s%s\n" % ("GLIMMER_CALLS is ",GLIMMER_CALLS))
-logfile.write("%s%s\n" % ("THEA_CALLS is ",THEA_CALLS))
+logfile.write("%s%s\n" % ("PHANOTATE_CALLS is ",PHANOTATE_CALLS))
 logfile.write("%s%s\n" % ("DEBUG is ",DEBUG))
 
-callCounts = {'prodigal' : 0, 'glimmer' : 0, 'genemarks' : 0, 'thea' : 0}
+callCounts = {'prodigal' : 0, 'glimmer' : 0, 'genemarks' : 0, 'phanotate' : 0}
 
 iterateGlimmer = False
 #iterateGlimmer = True 
@@ -215,13 +215,13 @@ def processGeneMarkS(line):
             geneCall(ID, method, contig, start, stop, strand, score)
             callCounts['genemarks'] += 1
 
-def processThea(line):
+def processPhanotate(line):
     if not line.startswith('#'):
 
         split = line.split("\t")
-        geneCall("NA", "THEA", split[3], split[0], split[1], split[2], "NA")
-        #geneCall("NA", "THEA", "NA", split[0], split[1], split[2], "NA")
-        callCounts['thea'] += 1
+        geneCall("NA", "PHANOTATE", split[3], split[0], split[1], split[2], "NA")
+        #geneCall("NA", "PHANOTATE", "NA", split[0], split[1], split[2], "NA")
+        callCounts['phanotate'] += 1
 
 ########## PRODIGAL ##########
 
@@ -317,25 +317,25 @@ if GENEMARKS_CALLS:
 else:
     logfile.write("%s\n" % ("Not running GeneMarkS gene calling"))
 
-########## THEA ##########
+########## PHANOTATE ##########
 
 if DEBUG:
-    logfile.write("%s\n" % ("Preparing to process THEA calls"))
-    logfile.write("%s%s\n" % ("THEA_CALLS is ",THEA_CALLS))
-if THEA_CALLS:
-    print("\n########## THEA ##########")
-    logfile.write("%s\n" % ("Processing THEA"))
+    logfile.write("%s\n" % ("Preparing to process PHANOTATE calls"))
+    logfile.write("%s%s\n" % ("PHANOTATE_CALLS is ",PHANOTATE_CALLS))
+if PHANOTATE_CALLS:
+    print("\n########## PHANOTATE ##########")
+    logfile.write("%s\n" % ("Processing PHANOTATE"))
 
-    os.chdir(theaPath)
-    systemCall('python thea.py ' + fastaFileName + ' > ' + outputFolder + 'theaOutput.txt' )
+    os.chdir(phanotatePath)
+    systemCall('python phanotate.py ' + fastaFileName + ' > ' + outputFolder + 'phanotateOutput.txt' )
     os.chdir(workingFolder)
 
-    for line in open(outputFolder + 'theaOutput.txt', 'rt'):
+    for line in open(outputFolder + 'phanotateOutput.txt', 'rt'):
         line = line.rstrip()
-        processThea(line)
-    logfile.write("%s\n" % ("Processing THEA complete."))
+        processPhanotate(line)
+    logfile.write("%s\n" % ("Processing PHANOTATE complete."))
 else:
-    logfile.write("%s\n" % ("Not running THEA gene calling"))
+    logfile.write("%s\n" % ("Not running PHANOTATE gene calling"))
 
 ########## RESULTS ##########
 
@@ -376,9 +376,9 @@ if PRODIGAL_CALLS:
 if GLIMMER_CALLS:
     callerCount += 1
     systemCall('python ' + cgcPath + '/CGC_parser.py Glimmer ' + outputFolder + 'glimmer.coords ' + outputFolder + 'glimmer.cgc')
-if THEA_CALLS:
+if PHANOTATE_CALLS:
     callerCount += 1
-    systemCall('python ' + cgcPath + '/CGC_parser.py THEA ' + outputFolder + 'theaOutput.txt ' + outputFolder + 'thea.cgc')
+    systemCall('python ' + cgcPath + '/CGC_parser.py PHANOTATE ' + outputFolder + 'phanotateOutput.txt ' + outputFolder + 'phanotate.cgc')
 
 logfile.write("%s%s\n" % ("callerCount is ",callerCount))
 if callerCount >= 2:
