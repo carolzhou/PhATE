@@ -72,6 +72,7 @@
 import re, string
 import phate_annotation
 from Bio import SeqIO  #*** BioPython is on mpath but not yet on mpath-dev - cez
+import os
 
 DEBUG = False  # For maximal verbosity
 
@@ -97,6 +98,13 @@ p_header     = re.compile('^>(.*)')
 p_comment    = re.compile('^#')
 p_up2space   = re.compile('^\S*')   # find 1st instance of everything that's not white space (check this)
 p_startCodon = re.compile('atg')  # standard start codon sequence (recall: storing sequence as lower case)
+
+# Verbosity
+
+CLEAN_RAW_DATA  = os.environ["CLEAN_RAW_DATA"]
+PHATE_WARNINGS  = os.environ["PHATE_WARNINGS"]
+PHATE_MESSAGES  = os.environ["PHATE_MESSAGES"]
+PHATE_PROGRESS  = os.environ["PHATE_PROGRESS"]
 
 #######################################################################################
 
@@ -287,7 +295,8 @@ class fasta(object):
         elif headerType == 'custom':
             return ('>' + self.customHeader)
         else:
-            print "Invalid header type:", hdrType, "--Choose full, clean, trunc, short, compound, blast"
+            if PHATE_WARNINGS == 'True':
+                print "WARNING in fastaSequence module: Invalid header type:", hdrType, "--Choose full, clean, trunc, short, compound, blast"
 
     def getStartCodon(self):
         if self.sequence != "":
@@ -567,9 +576,11 @@ class multiFasta(object):
         for fasta in self.fastaList:
             match_string2header = re.search(searchString,fasta.header)
             if match_string2header:
-                #print "Found the header:", fasta.header, "for string:", searchString
+                if DEBUG:
+                    print "Found the header:", fasta.header, "for string:", searchString
                 return(fasta)
-        #print "Fasta not found for", searchString
+        if PHATE_WARNINGS == 'True':
+            print "WARNING in fastaSequence module: Fasta not found for", searchString
         return(0)
 
     def reportStats(self):
@@ -649,7 +660,8 @@ class multiFasta(object):
 
     def addFastasFromFile(self,mtype):
         if self.filename == "unknown" or self.filename == '':
-            print "ERROR: First you must set the filename in addFastasFromFile()"
+            if PHATE_WARNINGS == 'True':
+                print "ERROR in fastaSequence module: First you must set the filename in addFastasFromFile()"
         else:
             fastaFile = open(self.filename,"r")
             fLines = fastaFile.read().splitlines()

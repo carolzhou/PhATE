@@ -47,8 +47,16 @@ BLAST_HOME    = os.environ["BLAST_HOME"]
 EMBOSS_HOME   = os.environ["EMBOSS_HOME"] 
 CODE_BASE_DIR = ""
 OUTPUT_DIR    = ""
-DEBUG         = False
-#DEBUG         = True 
+
+# Verbosity
+
+CLEAN_RAW_DATA   = os.environ["CLEAN_RAW_DATA"]
+PHATE_WARNINGS   = os.environ["PHATE_WARNINGS"]
+PHATE_MESSAGES   = os.environ["PHATE_MESSAGES"]
+PHATE_PROGRESS   = os.environ["PHATE_PROGRESS"]
+
+DEBUG            = False
+#DEBUG           = True 
 
 # For GFF output
 GFF_COMMENT = "##gff-version 3"
@@ -119,7 +127,8 @@ class genome(object):
                     print "Getting subsequence from A to B:", int(start)-1, int(end)
                 subSeq = fa.getSubsequence(int(start)-1,int(end)) #*** ???
             else:
-                print "WARNING: fa.header", fa.header, "did not match contig", contig
+                if PHATE_WARNINGS == 'True':
+                    print "WARNING in genomeSequence module: fa.header", fa.header, "did not match contig", contig
         return subSeq           
 
     def getSubsequence(self,start,end,contig):  # Note: tailored to RAST
@@ -195,7 +204,8 @@ class genome(object):
             if 'geneCallFile' in geneCallInfo:
                 geneCallFile = geneCallInfo['geneCallFile']
             else:
-                print "In genomeSequence.py, processGeneCalls(), no geneCall file provided"
+                if PHATE_WARNINGS == 'True':
+                    print "WARNING in genomeSequence module: processGeneCalls(), no geneCall file provided"
                 return (0)
 
         # Read gene-call lines from gene caller output file and create a new gene object
@@ -244,7 +254,8 @@ class genome(object):
                     newGene.end    = int(rightEnd)
                 else:
                     newGene.strand = 'x'
-                    print "ERROR: anomalous strand setting in processGeneCalls, phate_genomeSequence module:", newGene.strand
+                    if PHATE_WARNINGS == 'True':
+                        print "ERROR in genomeSequence module: anomalous strand setting in processGeneCalls, phate_genomeSequence module:", newGene.strand
 
                 #*** BANDAID - to compensate for PHANOTATE sometimes starting gene at 0
                 if newGene.start == 0:

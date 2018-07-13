@@ -23,7 +23,7 @@
 
 import re, os, subprocess
 
-CHATTY = True
+#DEBUG = True
 DEBUG = False
 
 p_comment = re.compile('^#')
@@ -34,6 +34,12 @@ PHANTOME_BASE_DIR   = os.environ["PHANTOME_BASE_DIR"]
 NCBI_TAXON_DIR      = os.environ["NCBI_TAXON_DIR"]
 PVOGS_BASE_DIR      = os.environ["PVOGS_BASE_DIR"]
 PSAT_OUT_DIR = ""  # now being set by set method via parameter
+
+# Verbosity
+CLEAN_RAW_DATA      = os.environ["CLEAN_RAW_DATA"]
+PHATE_WARNINGS      = os.environ["PHATE_WARNINGS"]
+PHATE_MESSAGES      = os.environ["PHATE_MESSAGES"]
+PHATE_PROGRESS      = os.environ["PHATE_PROGRESS"]
 
 # External links
 NCBI_TAXON_LINK = "https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id="
@@ -124,7 +130,6 @@ class annotationRecord(object):
         return outList
 
     def recordPSATannotations(self,proteinHeader,PSAT_H):  # Query PSAT annotation file for current gene's annotations 
-        DEBUG = False
         # Locations of annotations in PSAT annotation file
         EC_COLUMN       = 3
         EC_DESC_COLUMN  = 4
@@ -151,6 +156,9 @@ class annotationRecord(object):
         annotationString = ""
         psatAnnotationList = []
         tempList = []; columns = []
+
+        if PHATE_MESSAGES == 'True':
+            print "Annotation module says: Recording PSAT annotations."
 
         ### Capture lines corresponding to the gene
         pLines = PSAT_H.read().splitlines()
@@ -255,7 +263,8 @@ class annotationRecord(object):
                         start    = match_signalp2.group(1)
                         end      = match_signalp2.group(2)
                     else:
-                        print "DID NOT FIND A signalp2 MATCH for YES", pLine
+                        if DEBUG:
+                            print "DID NOT FIND A signalp2 MATCH for YES", pLine
                     
                 annotationString = "signal_peptide:" + signalp1 + ' ' + signalp2 
                 self.annotationList.append(annotationString)
@@ -270,6 +279,8 @@ class annotationRecord(object):
         self.annotationList = self.removeRedundancy(self.annotationList)
         self.updatePSATcount()
 
+        if PHATE_PROGRESS == 'True':
+            print "Annotation module says: PSAT annotations complete."
         return 
 
     def updatePSATcount(self):
@@ -303,7 +314,8 @@ class annotationRecord(object):
                     if len(fields) > 1:
                         dbxref = fields[1]
                     else:
-                        print "WARNING: no dbxref found for", self.name, "in database", database, "given line", line
+                        if PHATE_WARNINGS == 'True':
+                            print "WARNING in annotation module: no dbxref found for", self.name, "in database", database, "given line", line
                     idList.append(dbxref)
         return idList
 
@@ -345,7 +357,8 @@ class annotationRecord(object):
                     infoString += ' | ' + info
                 dbxrefList.append(infoString) 
         else:
-            print "WARNING:  Unexpected name encountered in phate_annotation.py/getFigDescription:", self.name 
+            if PHATE_WARNINGS == 'True':
+                print "WARNING in annotation module:  Unexpected name encountered in phate_annotation.py/getFigDescription:", self.name 
         return dbxrefList 
 
     def getPvogMembers(self,database): # database should be the pVOGs headers file, but fasta file will work (slowly)
@@ -400,7 +413,8 @@ class annotationRecord(object):
                     ncbiTaxonLink = NCBI_TAXON_LINK + taxonomyID
                     ncbiTaxonList.append(ncbiTaxonLink)
             else:
-                print "WARNING: NCBI hit header has improper format or is missing:", self.name
+                if PHATE_WARNINGS == 'True':
+                    print "WARNING: NCBI hit header has improper format or is missing:", self.name
         if DEBUG:
             print "ncbiTaxonList is", ncbiTaxonList
         return ncbiTaxonList
@@ -414,7 +428,8 @@ class annotationRecord(object):
         annotation = ""
 
         if self.name == "" or self.name == "none":
-            print "No name for identification of dbxref in phate_annotation/link2databaseIdentifiers"
+            if PHATE_WARNINGS == 'True':
+                print "No name for identification of dbxref in phate_annotation/link2databaseIdentifiers"
             return 
         else:
             if dbName.lower() == 'kegg':
@@ -456,7 +471,8 @@ class annotationRecord(object):
                 pass
  
             else:
-                print "Unrecognized database:", dbName 
+                if PHATE_WARNINGS == 'True':
+                    print "WARNING in annotation module: Unrecognized database:", dbName 
 
         if DEBUG: 
             print "dbxrefList:", dbxrefList
