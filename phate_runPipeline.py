@@ -2,18 +2,13 @@
 
 ################################################################
 #
-# Next:
-# *) Consolidate log files.
-# *) Implement user-configurable blast parameters.
-# *) Add Uniprot and Pfam databases
-#
-# phate_runPipeline.py
+# Program Title:  phate_runPipeline.py
 #
 # Description: Runs the phate annotation pipeline.  This code runs under Python 2.7, and requires
 #    dependent packages.
 #
-# Usage:  python phate_runPipeline.py phate.config
-#    (see phate_sample.config)
+# Usage:  python phate_runPipeline.py myPhATE.config
+#    (see sample.config for how to create your configuration file)
 #
 # Setup:
 #     CompareCalls/         - code for comparing gene caller results
@@ -23,13 +18,13 @@
 #     phate_runPipeline.py  - pipeline driver
 #     PipelineInput/        - contains myGenome.fasta (and optionally, myGenome.psat)
 #     PipelineOutput/       - output files are written here to a subdirectory specified in config file
-#     phate.config          - configuration file 
+#     myPhATE.config        - configuration file 
 #
 # Programmer's Notes:
 #    This code uses a running log; need to occasionally clean it out
 #
 # Programmers: 
-#    Carol E. Zhou - pipeline programmer: CompareCalls/, DatabasePrep/, SequenceAnnotation, phate_runPipeline.py
+#    Carol E. Zhou - pipeline programmer: CompareCalls/, DatabasePrep/, SequenceAnnotation/, phate_runPipeline.py
 #    Jeff Kimbrel  - GeneCalling/
 #
 ################################################################
@@ -37,9 +32,19 @@
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.
 # THIS CODE IS COVERED BY THE BSD LICENSE. SEE INCLUDED FILE BSD.PDF FOR DETAILS.
 
+# DO NOT MODIFY ANYTHING IN THIS FILE EXCEPT ITEMS LABELED AS "USER CONFIGURATION"
+
 import sys, os, re, string, copy, time, datetime
 from subprocess import call
+#import logging
 
+#############################################################################################
+################################ USER CONFIGURATION #########################################
+# global control - You may control verbosity here
+CLEAN_RAW_DATA           = 'False'   # When "True", raw output from BLAST and HMM searches will be removed from the PipelineOutput directories.
+PHATE_WARNINGS           = 'False'   # When "True", PhATE will write warnings to standard output; these warnings will always be written to a log file.
+PHATE_MESSAGES           = 'False'   # When "True", PhATE will output helpful messages to standard output.
+PHATE_PROGRESS           = 'True'   # When "True", PhATE will output statements regarding execution progress (the lowest level of verbosity)
 
 # Constants and Configurables; defaults will apply if not specified in config file
 
@@ -69,7 +74,7 @@ BLASTP_IDENTITY_DEFAULT  = '60'
 BLASTP_HIT_COUNT_DEFAULT = '3'
 BLASTN_HIT_COUNT_DEFAULT = '3'
 
-#blast databases
+#blast databases to be used for search
 NCBI_VIRUS_BLAST_DEFAULT         = True 
 NCBI_VIRUS_PROTEIN_BLAST_DEFAULT = True
 KEGG_VIRUS_BLAST_DEFAULT         = False     # Requires license
@@ -86,7 +91,7 @@ PFAM_BLAST_DEAFULT               = False     # not yet in service
 #hmm programs 
 HMM_PROGRAM_DEFAULT              = 'jackhmmer'  # This is the only program currently supported
 
-#hmm databases
+#hmm databases to be used for search 
 NCBI_VIRUS_HMM_DEFAULT           = False     # not yet in service
 NCBI_VIRUS_PROTEIN_HMM_DEFAULT   = False     # not yet in service 
 KEGG_VIRUS_HMM_DEFAULT           = False     # Requires license
@@ -103,14 +108,22 @@ PFAM_HMM_DEAFULT                 = False     # not yet in service
 #other
 PSAT_ANNOTATION_DEFAULT          = False     # Requires LLNL processing
 
-# Which computer/workspace am I running this on?
-MYCLUSTER = False    # Your working directory
-HOME_LAPTOP = True
-
-# Environment variables, which are global to any instance of this code's execution
-# You need to set these according to where the data sets and codes reside
+####################################################################################
+######################## USER CONFIGURATION ########################################
+#
+# 1) If you are running under a linux system, set PHATE_OUT and PHATE_ERR to 'True'. This will capture standard errors to files.
+PHATE_OUT = 'True'
+PHATE_ERR = 'True'
+#
+# 2) Name your machine, if you like, and be sure it is set to "True"; (one machine at a time!)
+MYCLUSTER = False    # Your production machine 
+DEVELOPMENT = True   # Your (or my) development machine
+#
+# 3) Environment variables, which are global to any instance of this code's execution
+# You need to set these environment variables according to where the data sets and codes reside
 if MYCLUSTER:  # machine running code 
     BASE_DIR = "/myBaseDir/myDir/PhATE/Code/PhATE_pipeline/" 
+    #os.environ["EMBOSS_HOME"]                   = ".../EMBOSS/EMBOSS-6.6.0/emboss/" #*** name of code is transeq.c
     os.environ["PIPELINE_DIR"]                  = BASE_DIR
     os.environ["PSAT_OUT_DIR"]                  = BASE_DIR # only on LLNL system
 
@@ -131,6 +144,10 @@ if MYCLUSTER:  # machine running code
     os.environ["NR_BLAST_HOME"]                 = os.environ["NR_BLAST_BASE_DIR"] + "nr"
     os.environ["REFSEQ_PROTEIN_BASE_DIR"]       = "/Users/yourname/DEV/PhATE/Databases/Refseq/"
     os.environ["REFSEQ_PROTEIN_BLAST_HOME"]     = os.environ["REFSEQ_PROTEIN_BASE_DIR"] + "refseq_protein"
+    os.environ["REFSEQ_GENE_BASE_DIR"]          = "/Users/yourname/DEV/PhATE/Databases/Refseq/Gene/"
+    os.environ["REFSEQ_GENE_BLAST_HOME"]        = os.environ["REFSEQ_GENE_BASE_DIR"] + "refseqgene"
+    os.environ["SWISSPROT_BASE_DIR"]            = "/Users/yourname/DEV/PhATE/Databases/Swissprot/"
+    os.environ["SWISSPROT_BLAST_HOME"]          = os.environ["SWISSPROT_BASE_DIR"] + "swissprot"
     os.environ["UNIPROT_BASE_DIR"]              = "/Users/yourname/DEV/PhATE/Databases/Uniprot/"
     os.environ["UNIPROT_BLAST_HOME"]            = os.environ["UNIPROT_BASE_DIR"] + "uniprot"
     os.environ["PFAM_BASE_DIR"]                 = "/Users/yourname/DEV/PhATE/Databases/Pfam/"
@@ -155,7 +172,15 @@ if MYCLUSTER:  # machine running code
     # HMM
     os.environ["HMM_HOME"]                      = ""
 
-elif HOME_LAPTOP:  # machine running code 
+    # Global control: verbosity and error capture
+    os.environ["CLEAN_RAW_DATA"]                = CLEAN_RAW_DATA
+    os.environ["PHATE_WARNINGS"]                = PHATE_WARNINGS  # Print warnings and errors to standard out
+    os.environ["PHATE_MESSAGES"]                = PHATE_MESSAGES  # Print helpful messages (may be verbose)
+    os.environ["PHATE_PROGRESS"]                = PHATE_PROGRESS  # Print each step in processing a genome
+    os.environ["PHATE_ERR"]                     = PHATE_ERR       # Capture standard errors to files on linux/mac machine
+    os.environ["PHATE_OUT"]                     = PHATE_OUT       # Capture standard errors to files on linux/mac machine
+
+elif DEVELOPMENT:  # alternate machine, for code development or testing 
     BASE_DIR = "/Users/carolzhou/DEV/PhATE/Code/" 
     os.environ["EMBOSS_HOME"]                   = "/Users/carolzhou/DEV/PhATE/OtherCodes/EMBOSS/EMBOSS-6.6.0/emboss/" #*** name of code is transeq.c
     os.environ["PIPELINE_DIR"]                  = BASE_DIR
@@ -206,6 +231,14 @@ elif HOME_LAPTOP:  # machine running code
     # HMM
     os.environ["HMM_HOME"]                      = ""
 
+    # Global control: verbosity and error capture
+    os.environ["CLEAN_RAW_DATA"]                = CLEAN_RAW_DATA
+    os.environ["PHATE_WARNINGS"]                = PHATE_WARNINGS
+    os.environ["PHATE_MESSAGES"]                = PHATE_MESSAGES
+    os.environ["PHATE_PROGRESS"]                = PHATE_PROGRESS
+    os.environ["PHATE_ERR"]                     = PHATE_ERR       # Capture standard errors to files on linux/mac machine
+    os.environ["PHATE_OUT"]                     = PHATE_OUT       # Capture standard errors to files on linux/mac machine
+
 else:
     print """You need to set the environment variables in """ + CODE + """\n"""
 
@@ -242,6 +275,7 @@ LOGFILE = open(logfile,"a")  # running log; nead to clean it out occasionally
 LOGFILE.write("%s%s%s\n" % ("Begin log file ",datetime.datetime.now(), " **************************** "))
 OUTFILE = open(outfile,"a")  # eventually this file will contain instructions for where to find the various outputs from each module
 OUTFILE.write("%s%s%s\n" % ("Begin out file ",datetime.datetime.now(), " **************************** "))
+runLog = "" # Pipeline log file for current pipeline run (written to user's output subdirectory; this is created once we know the subdir name)
 
 ##### PATTERNS and CONTROL
 
@@ -294,11 +328,11 @@ p_ncbiVirusProteinHmm   = re.compile("ncbi_virus_protein_hmm='(.*)'")
 p_keggVirusHmm          = re.compile("kegg_virus_hmm='(.*)'")
 p_phantomeHmm           = re.compile("phantome_hmm='(.*)'")
 p_pvogsHmm              = re.compile("pvogs_hmm='(.*)'")
-p_swissprotHmm          = re.compile("swissprot_hmm'(.*)'")
-p_refseqProteinHmm      = re.compile("refseq_protein_hmm'(.*)'")
-p_refseqGeneHmm         = re.compile("refseq_gene_hmm'(.*)'")
-p_uniparcHmm            = re.compile("uniparc_hmm'(.*)'")
-p_nrHmm                 = re.compile("nr_hmm'(.*)'")
+p_swissprotHmm          = re.compile("swissprot_hmm='(.*)'")
+p_refseqProteinHmm      = re.compile("refseq_protein_hmm='(.*)'")
+p_refseqGeneHmm         = re.compile("refseq_gene_hmm='(.*)'")
+p_uniparcHmm            = re.compile("uniparc_hmm='(.*)'")
+p_nrHmm                 = re.compile("nr_hmm='(.*)'")
 
 # PSAT
 p_psatAnnotation        = re.compile("psat_annotation='(.*)'")
@@ -306,10 +340,7 @@ p_psatFile              = re.compile("psat_file='(.*)'")
 
 # BOOLEANS 
 
-# Verbosity
-CHATTY = True
-#CHATTY = False
-
+# DEBUG messages control (local)
 DEBUG = True
 #DEBUG = False
 
@@ -454,6 +485,7 @@ for cLine in cLines:
     match_pvogsHmm              = re.search(p_pvogsHmm,cLine)
     match_uniparcHmm            = re.search(p_uniparcHmm,cLine)
     match_swissprotHmm          = re.search(p_swissprotHmm,cLine)
+    match_refseqGeneHmm         = re.search(p_refseqGeneHmm,cLine)
 
     match_genemarksCalls        = re.search(p_genemarksCalls,cLine)
     match_prodigalCalls         = re.search(p_prodigalCalls,cLine)
@@ -467,7 +499,9 @@ for cLine in cLines:
     elif match_outputSubdir: #*** Note that if the output dir is not read before subdir; depends on user not changing order in config - Clean this up!
         value = match_outputSubdir.group(1)
         if value != '':
-            PIPELINE_OUTPUT_SUBDIR = PIPELINE_OUTPUT_DIR + value 
+            value = value.rstrip('/')  # be sure that name of subdir ends in exactly one '/' (user might omit the slash)
+            PIPELINE_OUTPUT_SUBDIR = PIPELINE_OUTPUT_DIR + value + '/'
+            runLog = PIPELINE_OUTPUT_SUBDIR + "runPhATE.log"
         LOGFILE.write("%s%s\n" % ("PIPELINE_OUTPUT_SUBDIR is ",PIPELINE_OUTPUT_SUBDIR))
 
     elif match_genomeFile:
@@ -495,7 +529,8 @@ for cLine in cLines:
         elif value.lower() == 'no' or value.lower() == 'false' or value.lower() == 'off' or value == '':
             TRANSLATE_ONLY = False
         else:
-            print "Invalid string following translate_only parameter in config file:", value
+            if PHATE_WARNINGS == 'True':
+                print "WARNING:  Invalid string following translate_only parameter in config file:", value
             LOGFILE.write("%s%s\n" % ("Invalid string following translate_only parameter in config file: ", value))
 
     elif match_geneCaller:
@@ -521,7 +556,8 @@ for cLine in cLines:
         elif value.lower() == 'rast':
             geneCaller = 'rast'
             CONSENSUS_CALLS_FILE = 'rast.cgc'
-        print "Gene caller has been set to:", geneCaller
+        if PHATE_MESSAGES == 'True':
+            print "Gene caller has been set to:", geneCaller
 
     elif match_genomeType:
         value = match_genomeType.group(1)
@@ -668,7 +704,8 @@ for cLine in cLines:
         if value.lower() == 'jackhmmer':
             hmmProgram = 'jackhmmer'
         else:
-            print "WARNING: currenly only jackhmmer hmm search is supported; running jackhmmer"
+            if PHATE_WARNINGS == 'True':
+                print "WARNING: currenly only jackhmmer hmm search is supported; running jackhmmer"
             hmmProgram = HMM_PROGRAM_DEFAULT 
 
     elif match_ncbiVirusHmm:
@@ -734,6 +771,9 @@ for cLine in cLines:
         else:
             swissprotHmm = False
 
+    elif match_refseqGeneHmm:
+        pass  # Not yet in service
+
     # PSAT
 
     elif match_psatAnnotation:
@@ -748,9 +788,28 @@ for cLine in cLines:
         print "ERROR: unrecognized line in config file:", cLine
 
 if DEBUG:
-    print "After reading config file, contigName is", contigName
-    print "After reading config file, genemarksCalls is", genemarksCalls
-    print "After reading config file, ncbiVirusProteinBlast is", ncbiVirusProteinBlast
+    pass
+
+# Create user's output subdirectory, if doesn't already exist
+try:
+    os.stat(PIPELINE_OUTPUT_SUBDIR)
+except:
+    os.mkdir(PIPELINE_OUTPUT_SUBDIR)
+
+# Open log file for this PhATE run in User's subdir
+if runLog == "":
+    LOGFILE.write("%s\n" % ("WARNING: runLog filename is empty!"))
+else:
+    LOGFILE.write("%s%s%s%s\n" % ("Opening runLog file ",runLog," ",datetime.datetime.now()))
+    fileError = False
+    try:
+        RUNLOG = open(runLog, "w")
+        RUNLOG.write("%s%s\n" % ("Opening runLog at ",datetime.datetime.now()))
+    except IOError as e:
+        fileError = True
+        print e
+        LOGFILE.write("%s%s%s%s\n" % ("ERROR: could not open runLog file: ",runLog, " at ",datetime.datetime.now()))
+        LOGFILE.close(); exit(0)
 
 # Create objects for passing genecall, blast, and hmm parameters to subordinate codes 
 
@@ -790,8 +849,10 @@ hmmParameters = {
 
 # Double check: issue warning if necessary, but continue processing assuming this is what the user intends.
 if GENOME_TYPE == 'PHAGE' and CONSENSUS_CALLS_FILE != 'phanotate.cgc':
-    print "WARNING: If genome type is phage, the consensus gene-call file should be phanotate.cgc! Yours is", CONSENSUS_CALLS_FILE
+    if PHATE_WARNINGS == 'True':
+        print "WARNING: If genome type is phage, the consensus gene-call file should be phanotate.cgc! Yours is", CONSENSUS_CALLS_FILE
     LOGFILE.write("%s%s\n" % ("WARNING:  User has selected genome type as phage, but consensus gene-call file as ", CONSENSUS_CALLS_FILE))
+    RUNLOG.write("%s%s\n" % ("WARNING:  User has selected genome type as phage, but consensus gene-call file as ", CONSENSUS_CALLS_FILE))
 
 CONFIG.close()
 
@@ -799,7 +860,7 @@ CONFIG.close()
 if PSAT and TRANSLATE_ONLY:  
     PSAT = False
 
-if CHATTY:
+if PHATE_MESSAGES == 'True':
     print "PIPELINE_INPUT_DIR is", PIPELINE_INPUT_DIR
     print "PIPELINE_OUTPUT_DIR is", PIPELINE_OUTPUT_DIR
     print "PIPELINE_OUTPUT_SUBDIR is", PIPELINE_OUTPUT_SUBDIR
@@ -831,8 +892,8 @@ if CHATTY:
     print "refseqGeneBlast is", refseqGeneBlast
     print "phantomeBlast is", phantomeBlast
     print "pvogsBlast is", pvogsBlast
-    print "uniparcBlast is", uniparcBlast
     print "swissprotBlast is", swissprotBlast
+    print "uniparcBlast is", uniparcBlast
 
     print "ncbiVirusHmm is", ncbiVirusHmm
     print "ncbiVirusProteinHmm is", ncbiVirusProteinHmm
@@ -850,62 +911,56 @@ if CHATTY:
     else:
         print "PSAT_FILE was not provided." 
 
-LOGFILE.write("%s\n" % ("Input parameters:"))
-LOGFILE.write("%s%s\n" % ("   PIPELINE_INPUT_DIR: ", PIPELINE_INPUT_DIR))
-LOGFILE.write("%s%s\n" % ("   PIPELINE_OUTPUT_DIR: ", PIPELINE_OUTPUT_DIR))
-LOGFILE.write("%s%s\n" % ("   PIPELINE_OUTPUT_SUBDIR: ", PIPELINE_OUTPUT_SUBDIR))
-LOGFILE.write("%s%s\n" % ("   GENOME_FILE: ", GENOME_FILE))
-LOGFILE.write("%s%s\n" % ("   GENE_FILE: ", GENE_FILE))
-LOGFILE.write("%s%s\n" % ("   PROTEIN_FILE: ", PROTEIN_FILE))
-LOGFILE.write("%s%s\n" % ("   genomeType is ",genomeType))
-LOGFILE.write("%s%s\n" % ("   name is ",name))
-LOGFILE.write("%s%s\n" % ("   contigName is ",contigName))
-LOGFILE.write("%s%s\n" % ("   species is ",species))
+RUNLOG.write("%s\n" % ("Input parameters:"))
+RUNLOG.write("%s%s\n" % ("   PIPELINE_INPUT_DIR: ", PIPELINE_INPUT_DIR))
+RUNLOG.write("%s%s\n" % ("   PIPELINE_OUTPUT_DIR: ", PIPELINE_OUTPUT_DIR))
+RUNLOG.write("%s%s\n" % ("   PIPELINE_OUTPUT_SUBDIR: ", PIPELINE_OUTPUT_SUBDIR))
+RUNLOG.write("%s%s\n" % ("   GENOME_FILE: ", GENOME_FILE))
+RUNLOG.write("%s%s\n" % ("   GENE_FILE: ", GENE_FILE))
+RUNLOG.write("%s%s\n" % ("   PROTEIN_FILE: ", PROTEIN_FILE))
+RUNLOG.write("%s%s\n" % ("   genomeType is ",genomeType))
+RUNLOG.write("%s%s\n" % ("   name is ",name))
+RUNLOG.write("%s%s\n" % ("   contigName is ",contigName))
+RUNLOG.write("%s%s\n" % ("   species is ",species))
 
-LOGFILE.write("%s%s\n" % ("   geneticCode: ", geneticCode))
-LOGFILE.write("%s%s\n" % ("   Status of boolean TRANSLATE_ONLY is ",TRANSLATE_ONLY))
-LOGFILE.write("%s%s\n" % ("   geneCaller is ",geneCaller))
-LOGFILE.write("%s%s\n" % ("   genemarksCalls is ",genemarksCalls))
-LOGFILE.write("%s%s\n" % ("   prodigalCalls is ",prodigalCalls))
-LOGFILE.write("%s%s\n" % ("   glimmerCalls is ",glimmerCalls))
-LOGFILE.write("%s%s\n" % ("   phanotateCalls is ",phanotateCalls))
-LOGFILE.write("%s%s\n" % ("   CONSENSUS_CALLS_FILE is ",CONSENSUS_CALLS_FILE))
+RUNLOG.write("%s%s\n" % ("   geneticCode: ", geneticCode))
+RUNLOG.write("%s%s\n" % ("   Status of boolean TRANSLATE_ONLY is ",TRANSLATE_ONLY))
+RUNLOG.write("%s%s\n" % ("   geneCaller is ",geneCaller))
+RUNLOG.write("%s%s\n" % ("   genemarksCalls is ",genemarksCalls))
+RUNLOG.write("%s%s\n" % ("   prodigalCalls is ",prodigalCalls))
+RUNLOG.write("%s%s\n" % ("   glimmerCalls is ",glimmerCalls))
+RUNLOG.write("%s%s\n" % ("   phanotateCalls is ",phanotateCalls))
+RUNLOG.write("%s%s\n" % ("   CONSENSUS_CALLS_FILE is ",CONSENSUS_CALLS_FILE))
 
-LOGFILE.write("%s%s\n" % ("   blastpIdentity is ",blastpIdentity))
-LOGFILE.write("%s%s\n" % ("   blastpHitCount is ",blastpHitCount))
-LOGFILE.write("%s%s\n" % ("   blastnHitCount is ",blastnHitCount))
-LOGFILE.write("%s%s\n" % ("   ncbiVirusBlast is ",ncbiVirusBlast))
-LOGFILE.write("%s%s\n" % ("   ncbiVirusProteinBlast is ",ncbiVirusProteinBlast))
-LOGFILE.write("%s%s\n" % ("   keggVirusBlast is ",keggVirusBlast))
-LOGFILE.write("%s%s\n" % ("   nrBlast is ",nrBlast))
-LOGFILE.write("%s%s\n" % ("   refseqProteinBlast is ",refseqProteinBlast))
-LOGFILE.write("%s%s\n" % ("   refseqGeneBlast is ",refseqGeneBlast))
-LOGFILE.write("%s%s\n" % ("   phantomeBlast is ",phantomeBlast))
-LOGFILE.write("%s%s\n" % ("   pvogsBlast is ",pvogsBlast))
-LOGFILE.write("%s%s\n" % ("   uniparcBlast is ",uniparcBlast))
-LOGFILE.write("%s%s\n" % ("   swissprotBlast is ",swissprotBlast))
+RUNLOG.write("%s%s\n" % ("   blastpIdentity is ",blastpIdentity))
+RUNLOG.write("%s%s\n" % ("   blastpHitCount is ",blastpHitCount))
+RUNLOG.write("%s%s\n" % ("   blastnHitCount is ",blastnHitCount))
+RUNLOG.write("%s%s\n" % ("   ncbiVirusBlast is ",ncbiVirusBlast))
+RUNLOG.write("%s%s\n" % ("   ncbiVirusProteinBlast is ",ncbiVirusProteinBlast))
+RUNLOG.write("%s%s\n" % ("   keggVirusBlast is ",keggVirusBlast))
+RUNLOG.write("%s%s\n" % ("   nrBlast is ",nrBlast))
+RUNLOG.write("%s%s\n" % ("   refseqProteinBlast is ",refseqProteinBlast))
+RUNLOG.write("%s%s\n" % ("   refseqGeneBlast is ",refseqGeneBlast))
+RUNLOG.write("%s%s\n" % ("   phantomeBlast is ",phantomeBlast))
+RUNLOG.write("%s%s\n" % ("   pvogsBlast is ",pvogsBlast))
+RUNLOG.write("%s%s\n" % ("   uniparcBlast is ",uniparcBlast))
+RUNLOG.write("%s%s\n" % ("   swissprotBlast is ",swissprotBlast))
 
-LOGFILE.write("%s%s\n" % ("   ncbiVirusHmm is ",ncbiVirusHmm))
-LOGFILE.write("%s%s\n" % ("   ncbiVirusProteinHmm is ",ncbiVirusProteinHmm))
-LOGFILE.write("%s%s\n" % ("   keggVirusHmm is ",keggVirusHmm))
-LOGFILE.write("%s%s\n" % ("   nrHmm is ",nrHmm))
-LOGFILE.write("%s%s\n" % ("   refseqProteinHmm is ",refseqProteinHmm))
-LOGFILE.write("%s%s\n" % ("   refseqGeneHmm is ",refseqGeneHmm))
-LOGFILE.write("%s%s\n" % ("   phantomeHmm is ",phantomeHmm))
-LOGFILE.write("%s%s\n" % ("   pvogsHmm is ",pvogsHmm))
-LOGFILE.write("%s%s\n" % ("   uniparcHmm is ",uniparcHmm))
-LOGFILE.write("%s%s\n" % ("   swissprotHmm is ",swissprotHmm))
+RUNLOG.write("%s%s\n" % ("   ncbiVirusHmm is ",ncbiVirusHmm))
+RUNLOG.write("%s%s\n" % ("   ncbiVirusProteinHmm is ",ncbiVirusProteinHmm))
+RUNLOG.write("%s%s\n" % ("   keggVirusHmm is ",keggVirusHmm))
+RUNLOG.write("%s%s\n" % ("   nrHmm is ",nrHmm))
+RUNLOG.write("%s%s\n" % ("   refseqProteinHmm is ",refseqProteinHmm))
+RUNLOG.write("%s%s\n" % ("   refseqGeneHmm is ",refseqGeneHmm))
+RUNLOG.write("%s%s\n" % ("   phantomeHmm is ",phantomeHmm))
+RUNLOG.write("%s%s\n" % ("   pvogsHmm is ",pvogsHmm))
+RUNLOG.write("%s%s\n" % ("   uniparcHmm is ",uniparcHmm))
+RUNLOG.write("%s%s\n" % ("   swissprotHmm is ",swissprotHmm))
 
-LOGFILE.write("%s%s\n" % ("   Status of boolean PSAT is ",PSAT))
-LOGFILE.write("%s%s\n" % ("   psatAnnotation is ",psatAnnotation))
-LOGFILE.write("%s%s\n" % ("   PSAT_FILE: ", PSAT_FILE))
+RUNLOG.write("%s%s\n" % ("   Status of boolean PSAT is ",PSAT))
+RUNLOG.write("%s%s\n" % ("   psatAnnotation is ",psatAnnotation))
+RUNLOG.write("%s%s\n" % ("   PSAT_FILE: ", PSAT_FILE))
 
-# Create user's output subdirectory, if doesn't already exist
-
-try:
-    os.stat(PIPELINE_OUTPUT_SUBDIR)
-except:
-    os.mkdir(PIPELINE_OUTPUT_SUBDIR)
 
 # Open and check input file(s)
 
@@ -920,16 +975,18 @@ else:
     psatFile = ''
 outputDir    = PIPELINE_OUTPUT_SUBDIR
 
-LOGFILE.write("%s%s\n" % ("inputDir is ",inputDir))
-LOGFILE.write("%s%s\n" % ("genomeFile is ",genomeFile))
-LOGFILE.write("%s%s\n" % ("genecallFile is ",genecallFile))
-LOGFILE.write("%s%s\n" % ("geneFile is ",geneFile))
-LOGFILE.write("%s%s\n" % ("proteinFile is ",proteinFile))
-LOGFILE.write("%s%s\n" % ("psatFile is ",psatFile))
+RUNLOG.write("%s%s\n" % ("inputDir is ",    inputDir))
+RUNLOG.write("%s%s\n" % ("genomeFile is ",  genomeFile))
+RUNLOG.write("%s%s\n" % ("genecallFile is ",genecallFile))
+RUNLOG.write("%s%s\n" % ("geneFile is ",    geneFile))
+RUNLOG.write("%s%s\n" % ("proteinFile is ", proteinFile))
+RUNLOG.write("%s%s\n" % ("psatFile is ",    psatFile))
 
 # Check PSAT file
 
-LOGFILE.write("%s\n" % ("Checking files..."))
+if PHATE_PROGRESS == 'True':
+    print "Checking files..."
+RUNLOG.write("%s\n" % ("Checking files..."))
 fileError = False
 if PSAT:
     try:
@@ -966,11 +1023,16 @@ configSave = outputDir + configFile
 command = "cp " + configFile + ' ' + configSave
 os.system(command)
 
+if PHATE_PROGRESS == 'True':
+    print "Configuration complete."
+
 ##### BEGIN MAIN ########################################################################################
 
 ##### Run Gene-calling Module
 
-LOGFILE.write("%s\n" % ("Preparing to run genecall module..."))
+if PHATE_PROGRESS == 'True':
+    print "Preparing to run genecall module..."
+RUNLOG.write("%s\n" % ("Preparing to run genecall module..."))
 
 param2 = outputDir[:-1]  # remove terminal '/' because subordinate code adds it explicitly
 
@@ -984,24 +1046,33 @@ if genecallParameters["glimmerCalls"]:
 if genecallParameters["phanotateCalls"]:
     param3 += "phanotate_"
 
-command = "python " + GENECALL_CODE + ' ' + genomeFile + ' ' + param2 + ' ' + param3 
+#param4 = "2>&1 > genecall.err"
+#command = "python " + GENECALL_CODE + ' ' + genomeFile + ' ' + param2 + ' ' + param3 + ' ' + param4
+command = "python " + GENECALL_CODE + ' ' + genomeFile + ' ' + param2 + ' ' + param3
 
-print "Calling the gene-call module...command is,", command
-LOGFILE.write("%s%s\n" % ("Calling the gene-call module. Command is ", command))
+if PHATE_PROGRESS == 'True':
+    print "Calling the gene-call module."
+if PHATE_MESSAGES == 'True':
+    print "Command is,", command
+RUNLOG.write("%s%s\n" % ("Calling the gene-call module. Command is ", command))
 result = os.system(command)
-if CHATTY:
+if PHATE_PROGRESS == 'True':
     print "Done!"
-LOGFILE.write("%s%s\n" % ("Gene-call processing complete at ", datetime.datetime.now()))
+RUNLOG.write("%s%s\n" % ("Gene-call processing complete at ", datetime.datetime.now()))
 
 ##### Run Sequence Annotation Module
 
-LOGFILE.write("%s\n" % ("Preparing to call sequence annotation module..."))
+RUNLOG.write("%s\n" % ("Preparing to call sequence annotation module..."))
 if DEBUG:
     print "Before constructing command line to invoke sequence annotation code, contigName is", contigName
 
 # Construct command line parameter string
 
+if PHATE_PROGRESS == 'True':
+    print "Preparing command strings for homology searches..."
+
 # First, construct string listing the names of databases to be blasted
+
 blastParameterString = ''
 if blastParameters['ncbiVirusBlast']:
     blastParameterString += '_ncbiVirusGenome'
@@ -1066,19 +1137,24 @@ else:
     command = commandRoot 
 
 # Communicate and execute
-if CHATTY:
-    print "Calling the sequence annotation module...command is,", command
-LOGFILE.write("%s%s\n" % ("Calling the sequence annotation module. Command is ", command))
+if PHATE_PROGRESS == 'True':
+    print "Calling the sequence annotation module."
+if PHATE_MESSAGES == 'True':
+    print "Command is,", command
+RUNLOG.write("%s%s\n" % ("Calling the sequence annotation module. Command is ", command))
 result = os.system(command)
-if CHATTY:
+if PHATE_PROGRESS == 'True':
     print "Done!"
-LOGFILE.write("%s%s\n" % ("Sequence annotation processing complete at ", datetime.datetime.now()))
+RUNLOG.write("%s%s\n" % ("Sequence annotation processing complete at ", datetime.datetime.now()))
 
 ##### CLEAN UP
 
-if CHATTY:
+if PHATE_PROGRESS == 'True':
     print "Code completed at", datetime.datetime.now()
 OUTFILE.write("%s%s\n" %("Pipeline output is in output file created by code ",SEQANNOTATION_CODE))
 OUTFILE.close()
 LOGFILE.write("%s%s\n" % ("Code completed at ", datetime.datetime.now()))
 LOGFILE.close()
+RUNLOG.write("%s%s\n" % ("Execution complete at ",datetime.datetime.now()))
+RUNLOG.close()
+#logging.info('PhATE execution complete')
