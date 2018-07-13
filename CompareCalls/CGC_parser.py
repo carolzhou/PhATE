@@ -36,13 +36,24 @@
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.
 # THIS CODE IS COVERED BY THE BSD LICENSE. SEE INCLUDED FILE BSD.pdf FOR DETAILS.
 
-
+import datetime
 import sys
 import os
 import re
 import string
 import copy
 from subprocess import call
+
+##### Verbosity
+
+CGC_WARNINGS  = 'True'
+CGC_MESSAGES  = 'True'
+CGC_PROGRESS  = 'True'
+
+os.environ["CGC_WARNINGS"] = CGC_WARNINGS
+os.environ["CGC_MESSAGES"] = CGC_MESSAGES
+os.environ["CGC_PROGRESS"] = CGC_PROGRESS
+
 
 ##### CONFIGURABLE
 
@@ -224,7 +235,8 @@ def ProcessGenemark(fLines,OUT):
                 OUT.write("%s\n" ("ERROR encountered: unknown strand designator\n"))
                 if USER_OUT_PROVIDED:
                     USER_OUT.write("%s\n" ("ERROR encountered: unknown strand designator\n"))
-                print "ERROR: unexpected strand designator,", strand
+                if CGC_WARNINGS == 'True':
+                    print "ERROR in CGC_parser module: unexpected strand designator,", strand
                 return
             if contig == '':
                 contig = 'unknown'  # Contig name may be absent in input file
@@ -278,7 +290,8 @@ def ProcessGlimmer(fLines,OUT):
                 OUT.write("%s\n" ("ERROR encountered: unknown strand designator\n"))
                 if USER_OUT_PROVIDED:
                     USER_OUT.write("%s\n" ("ERROR encountered: unknown strand designator\n"))
-                print "ERROR: unexpected strand designator,", strand
+                if CGC_WARNINGS == 'True':
+                    print "ERROR in CGC_parser module: unexpected strand designator,", strand
                 return
 
             length = rightEnd - leftEnd + 1
@@ -435,6 +448,9 @@ def ProcessPHANOTATE(fLines,OUT):      # SDSU code
 
 ##### BEGIN MAIN 
 
+if CGC_PROGRESS == 'True':
+    print "CGC_parser: Parsing gene call outputs."
+
 # First, determine which gene caller was used
 
 match_glimmer     = re.search(p_glimmer,geneCaller)
@@ -492,5 +508,5 @@ if USER_OUT_PROVIDED:
 if RUNLOGOPEN:
     RUNLOGFILE.write("%s\n" % ("Processing complete"))
     RUNLOGFILE.close()
-LOGFILE.write("%s\n" % ("Processing complete"))
+LOGFILE.write("%s%s\n" % ("Processing complete at ", datetime.datetime.now()))
 LOGFILE.close()

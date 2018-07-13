@@ -28,8 +28,20 @@
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.
 # THIS CODE IS COVERED BY THE BSD LICENSE. SEE INCLUDED FILE BSD.pdf FOR DETAILS.
 
-import sys
 import os
+
+##### VERBOSITY
+
+# Note: These environment variables are set in CGC_parser.py, which is usually run before CGC_main.py
+# Therefore, if you have not run CGC_parser.py first, then you need to set these environment variables
+# by hand at the command line. Set env vars to 'True' or 'False' as strings, not booleans.
+CGC_WARNINGS = os.environ["CGC_WARNINGS"]
+CGC_MESSAGES = os.environ["CGC_MESSAGES"]
+CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+
+##### Import modules
+
+import sys
 import re
 import string
 import copy
@@ -54,9 +66,6 @@ p_comment  = re.compile('^#')
 p_order    = re.compile('Order')
 
 ##### PRINT CONTROL 
-
-CHATTY = True  # This will print status as the code executes
-#CHATTY = False
 
 #DEBUG = True    # Print even more!
 DEBUG = False
@@ -111,19 +120,19 @@ callSet_obj = CGC_geneCall.GeneCallSet()
 
 # For each user-provided gene call file, create a call set and add to list of call sets
 
-if CHATTY:
-    print "Main: Iterating through fileSet..."
+if CGC_PROGRESS == 'True':
+    print "CGC: Iterating through fileSet..."
 
 for geneFile in fileSet:
     callSet = copy.deepcopy(callSet_obj)
     geneFile_handle = open(geneFile,"r")
-    if CHATTY:
+    if CGC_MESSAGES == 'True':
         print "Adding Calls from file", geneFile
     callSet.AddGeneCalls(geneFile_handle)
     geneFile_handle.close()
     callerList.append(callSet)
 
-if CHATTY:
+if CGC_MESSAGES == 'True':
     print "Main: callerList is", 
     for caller in callerList:
         print caller.geneCaller, ', ',
@@ -138,7 +147,7 @@ if DEBUG:
 
 # Sort calls in each list
 
-if CHATTY:
+if CGC_PROGRESS == 'True':
     print "Main: Sorting gene calls for each caller..."
 
 for caller in callerList:
@@ -153,7 +162,7 @@ if DEBUG:
 
 # Compare across the call sets
 
-if CHATTY:
+if CGC_PROGRESS == 'True':
     print "Main: Comparing accross the call sets..."
 
 compareGCs = CGC_compare.Comparison()
@@ -166,6 +175,9 @@ compareGCs.PrintReport()
 # Check
 if DEBUG:
     compareGCs.PrintAll()
+
+if CGC_PROGRESS == 'True':
+    print "CGC: complete."
 
 ##### CLEAN UP
 

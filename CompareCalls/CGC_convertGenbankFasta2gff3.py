@@ -30,6 +30,12 @@ import string
 import copy
 from subprocess import call
 
+##### Verbosity
+
+CGC_WARNINGS = os.environ["CGC_WARNINGS"]
+CGC_MESSAGES = os.environ["CGC_MESSAGES"]
+CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+
 ##### FILES
 
 CODE_BASE = "./CGC_convertGenbankFasta2gff3"
@@ -47,9 +53,6 @@ p_comment  = re.compile('^#')
 p_order    = re.compile('Order')
 
 ##### PRINT CONTROL 
-
-CHATTY = True  # This will print status as the code executes
-#CHATTY = False
 
 #DEBUG = True    # Print even more!
 DEBUG = False
@@ -108,8 +111,8 @@ count = 0
 
 # For each user-provided gene call file, create a call set and add to list of call sets
 
-if CHATTY:
-    print "Input parameters are: genbank protein fasta file is", infile, "and contig name is", contig
+if CGC_MESSAGES == 'True':
+    print "CGC convertGenbank module says: Input parameters are: genbank protein fasta file is", infile, "and contig name is", contig
 
 iLines = IN.read().splitlines()
 OUT.write("%s\n" % ("#gff-version3"))

@@ -38,6 +38,12 @@ import re
 import copy
 import CGC_geneCall
 
+##### Verbosity
+
+CGC_WARNINGS = os.environ["CGC_WARNINGS"]
+CGC_MESSAGES = os.environ["CGC_MESSAGES"]
+CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+
 p_comment   = re.compile('^#')
 
 class Comparison(object):
@@ -58,7 +64,8 @@ class Comparison(object):
             self.callerList.sort()
             return len(self.callerList)
         else:
-            print "IdentifyCallers(): No callers to extract: call method Merge() to establish mergeList before calling this method" 
+            if CGC_WARNINGS == 'True':
+                print "WARNING in CGC_compare module: IdentifyCallers(): No callers to extract: call method Merge() to establish mergeList before calling this method" 
             return 0
 
     # Run Merge() and Compare() before running this method   
@@ -81,11 +88,14 @@ class Comparison(object):
                             self.commonCore.append(newCommonCoreCall)
                             count += 1
                 else:
-                    print "IdentifyCommonCore(): callerCount is zero! cannot process"
+                    if CGC_WARNINGS == 'True':
+                        print "WARNING in CGC_compare: IdentifyCommonCore(): callerCount is zero! cannot process"
             else:
-                print "IdentifyCommonCore(): MergeList is empty:  need to run self.Merge()"
+                if CGC_WARNINGS == 'True':
+                    print "WARNING in CGC_compare module: IdentifyCommonCore(): MergeList is empty:  need to run self.Merge()"
         else:
-            print "IdentifyCommonCore(): No data available to identify common core"
+            if CGC_WARNINGS == 'True':
+                print "WARNING in CGC_compare module: IdentifyCommonCore(): No data available to identify common core"
         return 
 
     # Determine which gene call occurs first along the sequence
@@ -153,7 +163,8 @@ class Comparison(object):
             if identityList:
                 self.uniqueList.append(identityList)
         else:
-            print "Compare(): Nothing to Compare"
+            if CGC_MESSAGES == 'True':
+                print "CGC_compare says: Compare(): Nothing to Compare"
         return
 
     def PrintMergeList(self):

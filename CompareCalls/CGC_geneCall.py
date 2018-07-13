@@ -34,6 +34,13 @@
 
 import re
 import copy
+import os
+
+##### Verbosity
+
+CGC_WARNINGS = os.environ["CGC_WARNINGS"]
+CGC_MESSAGES = os.environ["CGC_MESSAGES"]
+CGC_PROGRESS = os.environ["CGC_PROGRESS"]
 
 p_comment    = re.compile('^#')
 p_caller     = re.compile('([\w\d]+)\sgene\scalls')
@@ -130,7 +137,8 @@ class GeneCallSet(object):
                     self.geneCaller = caller 
                     self.GetGeneCalls(fLines,caller)
                 else:
-                    print "ERROR: gene caller not recognized in geneCall.GeneCallSet,", caller, line
+                    if CGC_WARNINGS == 'True':
+                        print "ERROR in CGC_geneCall: gene caller not recognized in geneCall.GeneCallSet,", caller, line
         return
 
     # Determine which of 2 gene calls occurs first along the sequence (left to right, regardless of orientation) 
