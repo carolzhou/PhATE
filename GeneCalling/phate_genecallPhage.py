@@ -2,7 +2,7 @@
 #
 # phate_genecallPhage.py
 #
-# Programmer: Jeff Kimbrel
+# Programmers: Jeff Kimbrel, Carol Zhou
 #
 # Description: Single command to run PhATE, Prodigal, Glimmer and GeneMarkS on a fasta file
 #
@@ -27,15 +27,15 @@
 #
 ################################################################
 
-# This code was developed by Jeff Kimbrel at Lawrence Livermore National Laboratory.
+# This code was originally developed by Jeff Kimbrel and adapted by Carol Zhou at Lawrence Livermore National Laboratory.
 # THIS CODE IS COVERED BY THE BSD LICENSE. SEE INCLUDED FILE BSD.PDF FOR DETAILS.
 
 import os
 import sys
 import re
 
-#DEBUG = False 
-DEBUG = True
+DEBUG = False 
+#DEBUG = True
 
 # booleans control which gene finder(s) to call
 GENEMARKS_CALLS = False   
@@ -58,6 +58,11 @@ geneMarkSPath = os.environ["GENEMARKS_PATH"]
 phanotatePath = os.environ["PHANOTATE_PATH"]
 cgcPath       = os.environ["CGC_PATH"]
 
+# Verbosity
+PHATE_MESSAGES = os.environ["PHATE_MESSAGES"]
+PHATE_WARNINGS = os.environ["PHATE_WARNINGS"]
+PHATE_PROGRESS = os.environ["PHATE_PROGRESS"]
+
 # Data Structures
 
 files = {
@@ -68,10 +73,12 @@ files = {
 
 # Input Parameters
 
-print "There are", len(sys.argv), "input parameters:", sys.argv
+if PHATE_MESSAGES == 'True':
+    print "There are", len(sys.argv), "input parameters:", sys.argv
 
 if len(sys.argv) == 1:
-    print ("Usage: /usr/local/bin/python3.4 annotatePhage.py fastaFile.fa outFolder")
+    if PHATE_WARNINGS == 'True':
+        print "Usage: /usr/local/bin/python3.4 annotatePhage.py fastaFile.fa outFolder", "Exiting now."
     exit(0)
 
 fastaFileName = sys.argv[1]
@@ -100,7 +107,8 @@ logfilefullpath = outputFolder + "phate_genecallPhage.log"
 logfile = open(logfilefullpath,"w")
 logfile.write("%s%s\n" % ("Input parameters are:",sys.argv))
 workingFolder = os.getcwd()
-print "workingFolder is", workingFolder
+if PHATE_MESSAGES == 'True':
+    print "workingFolder is", workingFolder
 if not os.path.exists(outputFolder):
     os.mkdir(outputFolder)
 logfile.write("%s%s\n" % ("output folder is ", outputFolder))
@@ -144,7 +152,8 @@ class geneCall:
 
 def systemCall(command):
     #print("\nSYSTEM CALL: "+command)
-    print "\nSYSTEM CALL: ", command
+    if PHATE_MESSAGES == 'True':
+        print "\nSYSTEM CALL: ", command
     logfile.write("%s%s\n" % ("command is ",command))
     os.system(command)
 
@@ -171,7 +180,8 @@ def processProdigal(line):
 
         ID = getProdigalId(lineSplit[8])
 
-	print "   ID=",ID,"method=",method,"contig=",contig,"start/stop=",start,'/',stop,"strand=",strand,"score=",score
+        if PHATE_MESSAGES == 'True':
+	    print "   ID=",ID,"method=",method,"contig=",contig,"start/stop=",start,'/',stop,"strand=",strand,"score=",score
         geneCall(ID, method, contig, start, stop, strand, score)
         callCounts['prodigal'] += 1
 
@@ -230,7 +240,10 @@ def processPhanotate(line):
 ## This will be addressed in version 3 (https://github.com/hyattpd/Prodigal/issues/11)
 
 if PRODIGAL_CALLS:
-    print("\n########## Prodigal ##########")
+    if PHATE_PROGRESS == 'True':
+        print "Genecall module says: running Prodigal."
+    if PHATE_MESSAGES == 'True':
+        print("\n########## Prodigal ##########")
     logfile.write("%s\n" % ("Processing Prodigal"))
 
     command = prodigalPath + 'prodigal -q -i ' + fastaFileName + ' -o ' + outputFolder + 'prodigal.gff -f gff -p meta'
@@ -260,7 +273,10 @@ if DEBUG:
     logfile.write("%s\n" % ("Preparing to process Glimmer calls"))
     logfile.write("%s%s\n" % ("GLIMMER_CALLS is ",GLIMMER_CALLS))
 if GLIMMER_CALLS:
-    print("\n########## Glimmer ##########")
+    if PHATE_PROGRESS == 'True':
+        print "Genecall module says: running Glimmer."
+    if PHATE_MESSAGES == 'True':
+        print("\n########## Glimmer ##########")
     logfile.write("%s\n" % ("Processing Glimmer"))
     logfile.write("%s%s\n" % ("glimmerPath is ",glimmerPath))
     logfile.write("%s%s\n" % ("fastaFileName is ",fastaFileName))
@@ -303,7 +319,10 @@ if DEBUG:
     logfile.write("%s\n" % ("Preparing to process Genemarks calls"))
     logfile.write("%s%s\n" % ("GENEMARKS_CALLS is ",GENEMARKS_CALLS))
 if GENEMARKS_CALLS:
-    print("\n########## GeneMarkS ##########")
+    if PHATE_PROGRESS == 'True':
+        print "Genecall module says: running GeneMarkS."
+    if PHATE_MESSAGES == 'True':
+        print("\n########## GeneMarkS ##########")
     logfile.write("%s\n" % ("Processing GeneMarkS"))
 
     systemCall(geneMarkSPath + 'gmhmmp -m ' + geneMarkSPath + '/heu_11.mod ' + fastaFileName + ' -o ' + outputFolder + 'geneMarkS.lst -r')
@@ -322,8 +341,12 @@ else:
 if DEBUG:
     logfile.write("%s\n" % ("Preparing to process PHANOTATE calls"))
     logfile.write("%s%s\n" % ("PHANOTATE_CALLS is ",PHANOTATE_CALLS))
+
 if PHANOTATE_CALLS:
-    print("\n########## PHANOTATE ##########")
+    if PHATE_PROGRESS == 'True':
+        print "Genecall module says: running Phanotate."
+    if PHATE_MESSAGES == 'True':
+        print("\n########## PHANOTATE ##########")
     logfile.write("%s\n" % ("Processing PHANOTATE"))
 
     os.chdir(phanotatePath)
