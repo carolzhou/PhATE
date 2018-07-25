@@ -9,7 +9,9 @@ PhATE is a fully automated computational pipeline for annotating phage genomes o
 
 HOW TO SET UP PHATE ON YOUR LOCAL MACHINE
 
-You will need to acquire one or more of the databases listed below under SUPPORING DATABASES, and the 3rd party codes listed under SUPPORTING 3rd PARTY CODES. You will need to acquire at least one of the supported gene finders, but it is recommended to run all four gene finders so that the results can be meaningfully compared. You will need to specifiy the locations of the supporting data sets and codes in phate_runPipeline.py, and you will need to locate your genome file in the PipelineInput directory. Place your configuration file at the top level (alongside phate_runPipeline.py).
+You will need to acquire one or more of the databases listed below under SUPPORING DATABASES, and the 3rd party codes listed under SUPPORTING 3rd PARTY CODES. You will need to acquire at least one of the supported gene finders, but it is recommended to run all four gene finders so that the results can be meaningfully compared. You will need to specifiy the locations of the supporting data sets and codes in phate_runPipeline.py under "USER CONFIGURATION", and you will need to locate your genome file in the PipelineInput directory. Place your configuration file at the top level (alongside phate_runPipeline.py).
+
+You may up- or down-regulate verbosity in the phate_runPipeline.py file, under "USER CONFIGURATION"
 
 (You will need to modify sample.config accordingly.)
 Run the PhATE pipeline at the command line using the following command:
@@ -65,10 +67,10 @@ PHATE PIPELINE OUTPUT FILES
 In the user-specified output directory, under PipelineOutput/, the following files will be written:
 * gene.fnt and protein.faa fasta files generated using the designated preferred gene finder
 * CGC_results.txt - side-by-side comparison of all gene finder results
-* phate_sequenceAnnotation_main.out - integrated annotation results
-* BLAST/ directory - raw blast results for genome (under Genome/) and proteins (under Protein/) if CLEAN switch is 'False'
+* phate_sequenceAnnotation_main.out - tabbed integrated annotation results (also written in gff format)
+* BLAST/ directory - raw blast results for genome (under Genome/) and proteins (under Protein/) if CLEAN_RAW_DATA switch in phate_runPipeline.py is 'False'
 * pVOG groupings comprising alignment-ready fasta files (under BLAST/Protein/)
-* HMM/ directory - raw hmm search results for protein sequences (under Protein/)
+* HMM/ directory - raw hmm search results for protein sequences (under Protein/) if CLEAN_RAW_DATA switch in phate_runPipeline.py is 'False'
 * pVOG grouping comprising alignment-ready fasta files (under HMM/Protein/)
 
 RUNNING PHATE AS AN "EMBARASSINGLY PARALLEL" CODE
@@ -79,6 +81,6 @@ FURTHER RECOMMENDATIONS
 
 PhATE was originally developed for anotating phage genome sequences. However, PhATE may also be useful in helping to identify phage genes within bacterial genomes (i.e., prophage). Thus, the user has the option of running multiple gene callers for bacterial genome sequence (GeneMarkS, Glimmer, Prodigal) and a new gene finder specifically for phage (PHANOTATE). The calls from any two or more of these callers are compared by the PhATE/CGC code so that the user can examine the calls that agree or disagree among the callers, and then run PhaTE again, selecting the caller of choice for annotating the sequence. 
 
-Although all supporting data sets are phage- or virus-centric, NR and Refseq Protein are included in order to help identify genes/functions that are not known in the virus/phage gene data sets. However, PhATE is not intended to be the sole source for anntotation of bacterial genome sequences, as PhATE is tailored for identification of genes and functions in phage.
+Although most supporting data sets are phage- or virus-centric, NR and Refseq Protein are included in order to help identify genes/functions that are not known in the virus/phage gene data sets. However, PhATE is not intended to be the sole source for anntotation of bacterial genome sequences, as PhATE is tailored for identification of genes and functions in phage.
 
 The NR database has grown enormously large. It is recommended to use a smaller database, such as Refseq Protein in place of NR. Furthermore, annotating with NR will add greatly to the time required for processing a genome through PhATE. It is recommended that NR be turned 'off' ('false') until one desires to preform a full/final annotation of the genome of interest, if using NR.
