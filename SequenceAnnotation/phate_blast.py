@@ -669,7 +669,7 @@ class multiBlast(object):
                                 self.writePVOGsequences2file(outfilePVOG_h,pVOGlines,pVOG)                  # followed by the pVOG group
                                 outfilePVOG_h.close()
 
-        if CLEAN_RAW_DATA:
+        if CLEAN_RAW_DATA == 'True':
             if PHATE_PROGRESS == 'True':
                 print "Blast module says: removing raw data files."
             self.cleanBlastOutDir()

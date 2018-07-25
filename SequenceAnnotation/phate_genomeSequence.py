@@ -42,6 +42,7 @@ import string
 import phate_fastaSequence
 import phate_annotation
 import re, os, copy
+import subprocess
  
 BLAST_HOME    = os.environ["BLAST_HOME"] 
 EMBOSS_HOME   = os.environ["EMBOSS_HOME"] 
@@ -588,7 +589,8 @@ class genome(object):
         GENE_H.write("%s\n" % (outSequence)) 
         GENE_H.close()
         command = "transeq" + " -sequence " + tempGeneFile + " -outseq " + tempProtFile + " -table " + str(geneticCode) + " -frame=1"
-        result = os.system(command)
+        #result = os.system(command)
+        result = subprocess.check_output(command,shell=True)
         PROT_H = open(tempProtFile,"r")
         fLines = PROT_H.read().splitlines()
         for i in xrange(1,(len(fLines))):

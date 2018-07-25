@@ -30,6 +30,8 @@
 
 import os
 
+PHATE_PIPELINE = True  # Running this code within the PhATE pipeline. Set this to False if running code independently
+
 ##### VERBOSITY
 
 # Note: These environment variables are set in CGC_parser.py, which is usually run before CGC_main.py
@@ -48,6 +50,7 @@ import copy
 from subprocess import call
 import CGC_geneCall
 import CGC_compare
+import datetime
 
 ##### FILES
 
@@ -58,7 +61,7 @@ OUT_FILE  = CODE_BASE + ".out"
 
 infile = ""
 #OUT = open(OUT_FILE,"w") 
-LOG = open(LOG_FILE,"w")
+LOG1 = open(LOG_FILE,"w")
 
 ##### PATTERNS
 
@@ -85,32 +88,50 @@ INFO_STRING = "This code currently supports the following gene callers:  GeneMar
 fileSet = []
 argCount = len(sys.argv)
 if argCount > 1:
-    match = re.search("help", sys.argv[1].lower())
-    if match:
-        print HELP_STRING
-        LOG.close(); exit(0)
-    match = re.search("input", sys.argv[1].lower())
-    if match:
-        print INPUT_STRING
-        LOG.close(); exit(0)
-    match = re.search("usage", sys.argv[1].lower())
-    if match:
-        print USAGE_STRING
-        LOG.close(); exit(0)
-    match = re.search("detail", sys.argv[1].lower())
-    if match:
-        print INFO_STRING
-        LOG.close(); exit(0)
-    match = re.search("info", sys.argv[1].lower())
-    if match:
-        print INFO_STRING
-        LOG.close(); exit(0)
-    else:
-        fileSet = sys.argv[1:]  # skip 0th element = name of code
+
+    if PHATE_PIPELINE:  # First parameter is "log=<logFile>", and remaining parameters are genecall files to compare
+        if argCount > 2:
+            match = re.search("log=", sys.argv[1].lower()
+            if match:
+                LOG_FILE = match.group(1)
+                LOG2 = open(LOG_FILE,"w")
+                LOG2.write("%s%s\n" % ("Opening log at ",datetime.datetime.now()))
+            else:
+                print "ERROR: CGC_main.py expects name of log file as first input parameter. Parameter was:", sys.argv[1]
+            fileSet = sys.argv[2:]  # collect remaining command-line arguments
+
+    else:  # "Help" input parameters should only be encountered if running code independently at command line
+        match = re.search("help", sys.argv[1].lower())  
+        if match:
+            print HELP_STRING
+            LOG.close(); exit(0)
+
+        match = re.search("input", sys.argv[1].lower())
+        if match:
+            print INPUT_STRING
+            LOG.close(); exit(0)
+
+        match = re.search("usage", sys.argv[1].lower())
+        if match:
+            print USAGE_STRING
+            LOG.close(); exit(0)
+
+        match = re.search("detail", sys.argv[1].lower())
+        if match:
+            print INFO_STRING
+            LOG.close(); exit(0)
+
+        match = re.search("info", sys.argv[1].lower())
+        if match:
+            print INFO_STRING
+            LOG.close(); exit(0)
+        else:
+            fileSet = sys.argv[1:]  # skip 0th element = name of code
+
 else:
-    LOG.write("%s\n" % ("Incorrect number of command-line arguments provided"))
+    LOG1.write("%s\n" % ("Incorrect number of command-line arguments provided"))
     print USAGE_STRING
-    LOG.close(); exit(0)
+    LOG1.close(); exit(0)
 
 ##### BEGIN MAIN 
 
@@ -122,9 +143,14 @@ callSet_obj = CGC_geneCall.GeneCallSet()
 
 if CGC_PROGRESS == 'True':
     print "CGC: Iterating through fileSet..."
+if PHATE_PIPELINE:
+    LOG2.write("%s%s\n" % ("CGC: Iteraing through fileSet at ",datetime.datetime.now()))
+    LOG2.write("%s%s\n" % ("fileSet is ",fileSet))
 
 for geneFile in fileSet:
     callSet = copy.deepcopy(callSet_obj)
+    if PHATE_PIPELINE:
+        LOG2.write("%s%s\n" % ("Processing geneFile ",geneFile))
     geneFile_handle = open(geneFile,"r")
     if CGC_MESSAGES == 'True':
         print "Adding Calls from file", geneFile
@@ -138,6 +164,9 @@ if CGC_MESSAGES == 'True':
         print caller.geneCaller, ', ',
     print 
 
+if PHATE_PIPELINE:
+    LOG2.write("%s%s\n" % ("Main: callerList is ",callerList))
+
 # Check
 if DEBUG:
     print "\n******************Original Lists:"
@@ -149,6 +178,8 @@ if DEBUG:
 
 if CGC_PROGRESS == 'True':
     print "Main: Sorting gene calls for each caller..."
+if PHATE_PIPELINE:
+    LOG2.write("%s\n" % ("Main: Sorting gene calls for each caller"))
 
 for caller in callerList:
     caller.SortGeneCalls()
@@ -164,12 +195,22 @@ if DEBUG:
 
 if CGC_PROGRESS == 'True':
     print "Main: Comparing accross the call sets..."
+if PHATE_PIPELINE:
+    LOG2.write("%s\n" % ("Main: Comparing across the call sets..."))
 
 compareGCs = CGC_compare.Comparison()
+if PHATE_PIPELINE:
+    LOG2.write("%s\n" % ("Merging..."))
 for caller in callerList:
     compareGCs.Merge(caller.geneCallList)
+if PHATE_PIPELINE:
+    LOG2.write("%s\n" % ("Comparing..."))
 compareGCs.Compare()
+if PHATE_PIPELINE:
+    LOG2.write("%s\n" % ("Identifying common core..."))
 compareGCs.IdentifyCommonCore()
+if PHATE_PIPELINE:
+    LOG2.write("%s\n" % ("Printing report..."))
 compareGCs.PrintReport()
 
 # Check
@@ -178,8 +219,12 @@ if DEBUG:
 
 if CGC_PROGRESS == 'True':
     print "CGC: complete."
+if PHATE_PIPELINE:
+    LOG2.write("%s%s\n" % ("CGC: complete at ",datetime.datetime.now()))
 
 ##### CLEAN UP
 
 #OUT.close()
 #LOG.close()
+if PHATE_PIPELINE:
+    LOG2.close()

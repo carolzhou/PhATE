@@ -446,6 +446,7 @@ if fileError:
     LOGFILE_H.close(); exit(0)
 
 # Communicate to log
+LOGFILE_H.write("%s%s\n" % ("Parameters recorded at ",datetime.datetime.now()))
 LOGFILE_H.write("%s%s\n" % ("outputDir is", outputDir))
 LOGFILE_H.write("%s%s\n" % ("outfile is ",outfile))
 LOGFILE_H.write("%s%s\n" % ("gfffile is ",gfffile))
@@ -559,7 +560,7 @@ geneCallInfo = {      # For passing info to genomeSequence module
 
 if PHATE_PROGRESS == 'True':
     print "Preparing for sequence annotation: setting parameters..."
-LOGFILE_H.write("%s\n" % ("Setting parameters for genome"))
+LOGFILE_H.write("%s%s\n" % ("Setting parameters for genome at ",datetime.datetime.now()))
 myGenome = phate_genomeSequence.genome()
 myGenome.genomeType  = genomeType
 myGenome.name        = name 
@@ -579,7 +580,7 @@ if PHATE_MESSAGES == 'True':
 # Extract gene calls
 if PHATE_PROGRESS == 'True':
     print "Sequence annotation main says: Processing gene calls..."
-LOGFILE_H.write("%s\n" % ("Processing gene calls"))
+LOGFILE_H.write("%s%s\n" % ("Processing gene calls at ",datetime.datetime.now()))
 myGenome.processGeneCalls(geneCallInfo,GENE_CALL_FILE)
 myGenome.cleanUpAfterEMBOSS()
 #myGenome.contigSet.assignContig2all(contigName) #*** TEMPORARY handles only finished genome /single contig for now
@@ -613,13 +614,13 @@ myGenome.printFastas2file(fastaOut)
 
 if PHATE_PROGRESS == 'True':
     print "Gene and protein files created."
-LOGFILE_H.write("%s\n" % ("Gene and protein files created."))
+LOGFILE_H.write("%s%s\n" % ("Gene and protein files created at ",datetime.datetime.now()))
 
 # If user specified to translate only, then skip this segment of the pipeline.
 if TRANSLATE_ONLY:
     if PHATE_PROGRESS == 'True':
         print "Translate only: computations completed."
-    LOGFILE_H.write("%s\n" % ("Translating only: computations completed."))
+    LOGFILE_H.write("%s%s\n" % ("Translating only: computations completed at ",datetime.datetime.now()))
 else:
     # Create a blast object and set parameters
     if PHATE_PROGRESS == 'True':
@@ -632,7 +633,7 @@ else:
     if PHATE_MESSAGES == 'True':
         print "Sequence annotation module says: Running at the following settings:"
         blast.printParameters()
-    LOGFILE_H.write("%s%s%s\n" % ("Preparing to run ", blast.blastFlavor, " at the following settings:"))
+    LOGFILE_H.write("%s%s%s%s\n" % (datetime.datetime.now(), " Preparing to run ", blast.blastFlavor, " at the following settings:"))
     blast.printParameters2file(LOGFILE_H)
 
     # Create directory for blast output
@@ -683,7 +684,7 @@ else:
     blast.setBlastParameters(myParamSet)
     blast.setBlastFlavor('blastn') 
 
-    LOGFILE_H.write("%s%s%s\n" % ("Preparing to run ", blast.blastFlavor, " at the following settings:"))
+    LOGFILE_H.write("%s%s%s%s\n" % (datetime.datetime.now(), " Preparing to run ", blast.blastFlavor, " at the following settings:"))
     blast.printParameters2file(LOGFILE_H)
 
     if PHATE_PROGRESS == 'True':
@@ -693,9 +694,9 @@ else:
         blast.printParameters()
 
     if PHATE_PROGRESS == 'True':
-        print "Sequence annotatio main says: Running Blast against phage genome database(s)..."
+        print "Sequence annotation main says: Running Blast against phage genome database(s)..."
 
-    LOGFILE_H.write("%s%s%s\n" % ("Preparing to run ", blast.blastFlavor, " at the following settings:"))
+    LOGFILE_H.write("%s%s%s%s\n" % (datetime.datetime.now(), " Preparing to run ", blast.blastFlavor, " at the following settings:"))
     blast.printParameters2file(LOGFILE_H)
     LOGFILE_H.write("%s\n" % ("Running Blast against phage genome database(s)..."))
 
@@ -745,7 +746,7 @@ else:
 
     if PHATE_PROGRESS == 'True':
         print "Sequence annotation main says: Gene blast complete."
-    LOGFILE_H.write("%s\n" % ("Gene blast complete."))
+    LOGFILE_H.write("%s%s\n" % ("Gene blast complete at ",datetime.datetime.now()))
 
     # PROTEIN BLAST
 
@@ -855,6 +856,8 @@ else:
 
     # Run protein hmm search
     hmm.runHmm(myGenome.proteinSet,'protein')
+
+    LOGFILE_H.write("%s%s\n" % ("HMM search complete at ",datetime.datetime.now()))
 
     # ADD PSAT ANNOTATIONS  
 

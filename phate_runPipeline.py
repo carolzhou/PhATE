@@ -35,7 +35,8 @@
 # DO NOT MODIFY ANYTHING IN THIS FILE EXCEPT ITEMS LABELED AS "USER CONFIGURATION"
 
 import sys, os, re, string, copy, time, datetime
-from subprocess import call
+#from subprocess import call
+import subprocess
 #import logging
 
 #############################################################################################
@@ -60,10 +61,10 @@ CONTIG_NAME              = 'unknown'   # user provided: temporary, finished geno
 SPECIES                  = 'unknown'   # user provided
 
 #gene callers
-GENEMARKS_CALLS_DEFAULT          = False     # Requires license
-PRODIGAL_CALLS_DEFAULT           = True
-GLIMMER_CALLS_DEFAULT            = True
-PHANOTATE_CALLS_DEFAULT          = True
+GENEMARKS_CALLS_DEFAULT  = False     # Requires license
+PRODIGAL_CALLS_DEFAULT   = True
+GLIMMER_CALLS_DEFAULT    = True
+PHANOTATE_CALLS_DEFAULT  = True
 
 #blast parameters
 MAX_BLAST_HIT_COUNT      = 100       # maximum number of hits to capture (user should specify far fewer than max)
@@ -341,8 +342,8 @@ p_psatFile              = re.compile("psat_file='(.*)'")
 # BOOLEANS 
 
 # DEBUG messages control (local)
-DEBUG = True
-#DEBUG = False
+#DEBUG = True
+DEBUG = False
 
 # Other boolean control
 PSAT = False            # This turns True if a psat output file is specified in the config file AND TRANSLATE_ONLY is False
@@ -787,9 +788,6 @@ for cLine in cLines:
         LOGFILE.write("%s%s\n" % ("ERROR: Unrecognized line in config file: ", cLine))
         print "ERROR: unrecognized line in config file:", cLine
 
-if DEBUG:
-    pass
-
 # Create user's output subdirectory, if doesn't already exist
 try:
     os.stat(PIPELINE_OUTPUT_SUBDIR)
@@ -1055,7 +1053,8 @@ if PHATE_PROGRESS == 'True':
 if PHATE_MESSAGES == 'True':
     print "Command is,", command
 RUNLOG.write("%s%s\n" % ("Calling the gene-call module. Command is ", command))
-result = os.system(command)
+#result = os.system(command)
+result = subprocess.check_output(command,shell=True)
 if PHATE_PROGRESS == 'True':
     print "Done!"
 RUNLOG.write("%s%s\n" % ("Gene-call processing complete at ", datetime.datetime.now()))

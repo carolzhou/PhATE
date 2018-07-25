@@ -83,6 +83,7 @@ if len(sys.argv) == 1:
 
 fastaFileName = sys.argv[1]
 outputFolder = sys.argv[2] + "/"
+cgcLog = outputFolder + "cgc.log"
 
 # booleans to control gene finding
 if len(sys.argv) == 4:
@@ -122,6 +123,7 @@ logfile.write("%s%s\n" % ("PRODIGAL_CALLS is ",PRODIGAL_CALLS))
 logfile.write("%s%s\n" % ("GLIMMER_CALLS is ",GLIMMER_CALLS))
 logfile.write("%s%s\n" % ("PHANOTATE_CALLS is ",PHANOTATE_CALLS))
 logfile.write("%s%s\n" % ("DEBUG is ",DEBUG))
+logfile.write("%s%s\n" % ("CGC log file is ",cgcLog))
 
 callCounts = {'prodigal' : 0, 'glimmer' : 0, 'genemarks' : 0, 'phanotate' : 0}
 
@@ -408,7 +410,9 @@ if callerCount >= 2:
     runCGC = True
 
 if runCGC:
-    systemCall('python ' + cgcPath + '/CGC_main.py ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
+    #systemCall('python ' + cgcPath + '/CGC_main.py ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
+    systemCall('python ' + cgcPath + '/CGC_main.py log=' + cgcLog + ' ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
+    
 else:
     logfile.write("%s\n" % ("Not running CGC code: too few gene callers to meaningfully compare"))
 

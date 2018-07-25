@@ -657,7 +657,8 @@ class multiHMM(object):
 
     def cleanHmmOutDir(self):  # Remove temporary files from HMM_OUT_DIR
         #command = "ls " + HMM_OUT_DIR  #*** FIX: list only files, not directories too
-        command = "ls " + self.hmmOutDir  #*** FIX: list only files, not directories too
+        #command = "ls " + self.hmmOutDir  #*** FIX: list only files, not directories too
+        command = "ls -p " + self.hmmOutDir + " grep -v /"  #*** should list only files, not directories too
         proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
         (result, err) = proc.communicate()
         if DEBUG:
@@ -665,7 +666,11 @@ class multiHMM(object):
         fileList = result.split('\n')
         for filename in fileList:
             file2delete = self.hmmOutDir + filename
-            if re.search('hmm',file2delete):
+            #if re.search('hmm',file2delete):
+            match_seqout = re.search('seqout',file2delete)
+            match_domout = re.search('domout',file2delete)
+            match_stdout = re.search('stdout',file2delete)
+            if match_seqout or match_domout or match_stdout:
                 command = "rm " + file2delete
                 proc = subprocess.Popen(command, stdout=subprocess.PIPE, shell=True)
                 (result, err) = proc.communicate()
