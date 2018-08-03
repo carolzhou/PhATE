@@ -1,4 +1,0 @@
-20 Sept 2017:
-Next step is to incorporate the ~4000 protein fastas that Steph pulled from NR, in file pVOGs_missing_genes.faa. First they need to be tagged with their pVOG identifier, so run the pVOGs_missing_genes.faa file as input to the code that identifies the sequences and then modifies the header to includ the pVOG id.
-
-Note that the source data file for VOG5146 is truncated after the 1st 16 accessions.
