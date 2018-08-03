@@ -453,7 +453,7 @@ class fasta(object):
             print "Sequence too long to print. See file."
 
     def printAll2file_tab(self,FILE_HANDLE):
-        tabLine = 'Header:' + self.header + '\tName:' + self.name + '\tType:' + self.sequenceType + '\tOrder:' + str(self.order) + '\tparent:' + str(self.start) + '/' + str(self.end) + '/' + self.parentName + '\tlength: ' + str(len(self.sequence))
+        tabLine = 'Header:' + self.header + '\tName:' + self.name + '\tType:' + self.sequenceType + '\tOrder:' + str(self.order) + '\tparent:' + str(self.start) + '/' + str(self.end) + '/' + str(self.strand) + '/' + self.parentName + '\tlength: ' + str(len(self.sequence))
         FILE_HANDLE.write("%s\n" % (tabLine))
         if self.annotationList:
             self.printAnnotations2file_tab(FILE_HANDLE)

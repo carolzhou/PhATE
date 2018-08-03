@@ -24,6 +24,7 @@ import phate_fastaSequence
 import phate_genomeSequence
 import phate_annotation
 from subprocess import Popen, PIPE, STDOUT
+import string
 
 # DEBUG control
 #DEBUG = True
@@ -261,6 +262,9 @@ class multiHMM(object):
 
         # Parse XML-, LIST-, or TBL-formatted hmm output #*** Is XML format available?  
 
+        if DEBUG:
+            print "self.outputFormat is", self.outputFormat
+
         if self.outputFormat == XML or self.outputFormat == LIST:
             if PHATE_WARNINGS == 'True':
                 print "ERROR in hmm module:  only TBL format is currently being used for jackhmmer output parsing"
@@ -308,10 +312,12 @@ class multiHMM(object):
                     dom1dom           = fields[15];  dom1dom = dom1dom.lstrip()
                     dom1rep           = fields[16];  dom1rep = dom1rep.lstrip()
                     dom1inc           = fields[17];  dom1inc = dom1inc.lstrip()
-                    targetDescription = fields[18];  targetDescription = targetDescription.rstrip()
+                    #targetDescription = fields[18];  targetDescription = targetDescription.rstrip()
+                    targetDescription = ' '.join(fields[18:]);  targetDescription = targetDescription.rstrip()
 
                     if DEBUG:
                         print "DEBUG in phate_hmm.py / sequence parsing"
+                        print "targetAccession:", targetAccession
                         print "hitCount:", hitCount, "targetName:", targetName, "queryName:", queryName
                         print "queryAccession:", queryAccession, "seqEvalue:", seqEvalue, "seqScore:", seqScore, "seqBias:", seqBias
                         print "dom1evalue:", dom1evalue, "dom1score:", dom1score, "dom1bias:", dom1bias
@@ -321,11 +327,20 @@ class multiHMM(object):
                         
                     # Collect pVOG identifiers for this hmm search hit; fasta header of target may have >= 1 pVOG identifier
                     vogIDs = ''; pVOGlist = []
-                    pVOGlist = re.findall('VOG\d\d\d\d', targetAccession)
+                    if DEBUG:
+                        print "DEBUG: targetName is", targetName
+                    pVOGlist = re.findall('VOG\d+', targetName)
+                    if DEBUG:
+                        print "DEBUG: VOG IDs found, pVOGlist is", pVOGlist
                     if pVOGlist:
                         for pVOG in pVOGlist:
                             vogIDs += pVOG + ' '
                         vogIDs.rstrip()
+                        if DEBUG:
+                            print "DEBUG: vogIDs is", vogIDs
+                    else:
+                        if DEBUG:
+                            print "DEBUG: pVOGlist is empty"
                      
                     # Create new hitDataSet object and store data (note: some data may not be stored)
                     newSequenceDataSet = copy.deepcopy(sequenceDataSet)
@@ -352,6 +367,8 @@ class multiHMM(object):
                     for vog in vogs:
                         tempVOGlist.append(vog)  # Now we have a complete (super)set of all pVOG identifiers found in hmm search 
             nrVOGlist = list(set(tempVOGlist)) # create a set, then convert back to list: presto! non-redundant list
+            if DEBUG:
+                print "DEBUG: nrVOGlist is", nrVOGlist
 
             # Parse the domain-level hmm data
             # There can be multiple domain-level hits for a given sequence (global) hit (above)
@@ -613,20 +630,29 @@ class multiHMM(object):
                     count += 1 
                     countA = 0
                     for annot in fasta.annotationList:
+                        if DEBUG:
+                            print "DEBUG: pVOGlist is", annot.pVOGlist
                         for pVOG in annot.pVOGlist:  # There may be multiple annotations to inspect
-                            # Avoid redundancy in printing pVOG groups for this fasta; only once per pVOG ID that was an hmm hit
-                            if pVOG not in pvogPrintedList:
-                                pvogPrintedList.append(pVOG)  # Record this pVOG identifier as "done"
-                                # create dynamic file name
-                                countA += 1 
-                                outfilePVOG = self.pVOGsOutDir + "hmm_pvogGroup_" + str(count) + '_' + str(countA) + '.faa' 
+                            if DEBUG:
+                                print "DEBUG: Processing pVOG", pVOG
+                            match_good = re.search('VOG',pVOG)
+                            if match_good:
+                                # Avoid redundancy in printing pVOG groups for this fasta; only once per pVOG ID that was an hmm hit
+                                if pVOG not in pvogPrintedList:
+                                    pvogPrintedList.append(pVOG)  # Record this pVOG identifier as "done"
+                                    # create dynamic file name
+                                    countA += 1 
+                                    outfilePVOG = self.pVOGsOutDir + "hmm_pvogGroup_" + str(count) + '_' + str(countA) + '.faa' 
+                                    if DEBUG:
+                                        print "Writing to outfile", outfilePVOG, "pVOG group", pVOG, "pvogPrintedList:", pvogPrintedList
+                                    # open file and write current fasta pluse each corresponding pVOG fasta
+                                    outfilePVOG_h = open(outfilePVOG,'w')
+                                    outfilePVOG_h.write("%c%s\n%s\n" % ('>',fasta.header,fasta.sequence)) # write the current peptide fasta,
+                                    self.writePVOGsequences2file(outfilePVOG_h,pVOGlines,pVOG)                  # followed by the pVOG group
+                                    outfilePVOG_h.close()
+                            else:
                                 if DEBUG:
-                                    print "Writing to outfile", outfilePVOG, "pVOG group", pVOG, "pvogPrintedList:", pvogPrintedList
-                                # open file and write current fasta pluse each corresponding pVOG fasta
-                                outfilePVOG_h = open(outfilePVOG,'w')
-                                outfilePVOG_h.write("%c%s\n%s\n" % ('>',fasta.header,fasta.sequence)) # write the current peptide fasta,
-                                self.writePVOGsequences2file(outfilePVOG_h,pVOGlines,pVOG)                  # followed by the pVOG group
-                                outfilePVOG_h.close()
+                                    print "WARNING: unexpected pVOG identifier:", pVOG        
 
         if CLEAN_RAW_DATA == 'True':
             if PHATE_PROGRESS == 'True':
