@@ -19,7 +19,7 @@ You may up- or down-regulate verbosity in the phate_runPipeline.py file, under "
 
 (You will need to modify sample.config accordingly.)
 Run the PhATE pipeline at the command line using the following command:
-$ python phate_runPipeline.py sample.config  
+$ python phate_runPipeline.py myPhate.config  
 
 SUPPORTING DATABASES
 
