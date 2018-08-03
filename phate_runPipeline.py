@@ -42,6 +42,8 @@ import subprocess
 #############################################################################################
 ################################ USER CONFIGURATION #########################################
 # global control - You may control verbosity here
+# Turn all messages on when installing/testing code and running at the command line.
+# Turn messages off once you are confident of proper execution, or if code has been implemented in parallel/throughput.
 CLEAN_RAW_DATA           = 'False'   # When "True", raw output from BLAST and HMM searches will be removed from the PipelineOutput directories.
 PHATE_WARNINGS           = 'False'   # When "True", PhATE will write warnings to standard output; these warnings will always be written to a log file.
 PHATE_MESSAGES           = 'False'   # When "True", PhATE will output helpful messages to standard output.
@@ -112,7 +114,8 @@ PSAT_ANNOTATION_DEFAULT          = False     # Requires LLNL processing
 ####################################################################################
 ######################## USER CONFIGURATION ########################################
 #
-# 1) If you are running under a linux system, set PHATE_OUT and PHATE_ERR to 'True'. This will capture standard errors to files.
+# 1) If you are running under a linux system, set PHATE_OUT and PHATE_ERR to 'True'. This will capture standard errors to files. Cannot
+# guarantee this will work under other operating systems.
 PHATE_OUT = 'True'
 PHATE_ERR = 'True'
 #

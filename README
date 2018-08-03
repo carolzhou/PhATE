@@ -9,8 +9,8 @@ PhATE is a fully automated computational pipeline for annotating phage genomes o
 
 HOW TO SET UP PHATE ON YOUR LOCAL MACHINE
 
-Place phate_runPipeline.py in the main directory. Create two subdirectories:  PipelineInput/ and PipelineOutput/
-Place your phage genome file (myGenome.fasta) in to the PipelineInput/ subdirectory
+Place phate_runPipeline.py in your main execution directory. Create two subdirectories:  PipelineInput/ and PipelineOutput/
+Place your phage genome fasta file (myGenome.fasta) into the PipelineInput/ subdirectory (single contig)
 Place your configuration file (myPhate.config) in the main directory (same level as phate_runPipeline.py)
 
 You will need to acquire one or more of the databases listed below under SUPPORING DATABASES, and the 3rd party codes listed under SUPPORTING 3rd PARTY CODES. You will need to acquire at least one of the supported gene finders, but it is recommended to run all four gene finders so that the results can be more meaningfully compared. You will need to specifiy the locations of the supporting data sets and codes in phate_runPipeline.py under "USER CONFIGURATION", and you will need to locate your genome file to the PipelineInput directory. Place your configuration file at the top level (alongside phate_runPipeline.py).
