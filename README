@@ -15,7 +15,7 @@ Place your configuration file (myPhate.config) in the main directory (same level
 
 You will need to acquire one or more of the databases listed below under SUPPORING DATABASES, and the 3rd party codes listed under SUPPORTING 3rd PARTY CODES. You will need to acquire at least one of the supported gene finders, but it is recommended to run all four gene finders so that the results can be more meaningfully compared. You will need to specifiy the locations of the supporting data sets and codes in phate_runPipeline.py under "USER CONFIGURATION", and you will need to locate your genome file to the PipelineInput directory. Place your configuration file at the top level (alongside phate_runPipeline.py).
 
-You may up- or down-regulate verbosity in the phate_runPipeline.py file, under "USER CONFIGURATION". This includes an option to clean the raw blast and hmm search data from the output directory.
+You may up- or down-regulate verbosity in the phate_runPipeline.py file, under "USER CONFIGURATION". This includes an option to clean the raw blast and hmm search data from the output directories.
 
 (You will need to modify sample.config accordingly.)
 Run the PhATE pipeline at the command line using the following command:
@@ -23,12 +23,12 @@ $ python phate_runPipeline.py myPhate.config
 
 SUPPORTING DATABASES
 
-It is recommended that the user acquire as many of the following sequence databases and associated codes as is feasible, although none are actually required to run the code.
+It is recommended that the user acquire as many of the following sequence databases and associated codes as is feasible, although none are actually required to run the code. (You may specify "translate_only='true'" to do gene finding and stop at that point.) Databases are listed with at least one way of acquiring them, but there may be additional sources.  
 
 * NCBI virus genomes - ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/ or https://www.ncbi.nlm.nih.gov/genome/viruses/viral.1.1.1.genomic.fna.gz
 * NCBI accession2taxid file - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/nucl_gb.accession2taxid.gz or https://www.ncbi.nlm.nih.gov/guide/taxonomy/nucl_gb.accession2taxid.gz
 * NCBI Refseq Protein - download using blast+: /bin/update_blastdb.pl refseq_protein
-* NCBI Refseq Gene - download using blast+: /bin/update_blastdb.pl refseqgene. This database contains primarily human sequences. To acquire bacterial gene sequences you may need to download them via http://ncbi.nlm.nih.gov/gene.
+* NCBI Refseq Gene - download using blast+: /bin/update_blastdb.pl refseqgene. This database contains primarily human sequences. To acquire bacterial gene sequences you may need to download them via http://ncbi.nlm.nih.gov/gene and process the data to generate a fasta data set.
 * NCBI Swissprot - download using blast+: /bin/update_blastdb.pl swissprot 
 * NR - ftp://ftp.ncbi.nlm.nih.gov/nr/
 * KEGG virus subset - (available by license) http://www.kegg.jp/kegg/download/
@@ -65,14 +65,14 @@ HOW TO WRITE A CONFIGURATION FILE
 
 Locations of supporting databases and codes are specified in the file, phate_runPipeline.py. 
 
-A sample configuration file is provided (sample.config). Make a copy of this file and rename it accordingly (eg., myPhate.config). The sample.config file is configured according to established default parameters. Any of the parameters may be modified (switches turned 'on' or 'off') by assigning 'true' or 'false'. It is suggested that you turn swithes off, then install each supporting database in turn and test the code. A switch not included in the configuration file is CLEAN_RAW_DATA, which you will find in phate_runPipeline.py (under USER CONFIGURATION). By default all raw blast and hmm outputs (written under PipelineOutput/BLAST/ and PipelineOutput/HMM/ subdirectories) will be deleted, so as to limit output volume. However, if you wish to retain that output, turn the CLEAN_RAW_DATA switch to 'True' in phate_runPipeline.py.
+A sample configuration file is provided (sample.config). Make a copy of this file and rename it accordingly (eg., myPhate.config). The sample.config file is configured according to established default parameters (just about everything turned 'off'). Any of the parameters may be modified (switches turned 'on' or 'off') by assigning 'true' or 'false'. It is suggested that you turn swithes off, then install each supporting database in turn and test the code. A switch not included in the configuration file is CLEAN_RAW_DATA, which you will find in phate_runPipeline.py (under USER CONFIGURATION). By default all raw blast and hmm outputs (written under PipelineOutput/BLAST/ and PipelineOutput/HMM/ subdirectories) will be deleted, so as to limit output volume. However, if you wish to retain that output, turn the CLEAN_RAW_DATA switch to 'True' in phate_runPipeline.py.
 
 PHATE PIPELINE OUTPUT FILES
 In the user-specified output directory, under PipelineOutput/, the following files will be written:
 * gene.fnt and protein.faa fasta files generated using the designated preferred gene finder
-* CGC_results.txt - side-by-side comparison of all gene finder results (if >=2 were run)
+* CGC_results.txt - side-by-side comparison of all gene finder results (if at least two were run)
 * phate_sequenceAnnotation_main.out - tabbed integrated annotation results (also written in gff format)
-* BLAST/ directory - raw blast results for genome (under Genome/) and proteins (under Protein/) (if CLEAN_RAW_DATA switch in phate_runPipeline.py is 'Falsea)'
+* BLAST/ directory - raw blast results for genome (under Genome/) and proteins (under Protein/) (if CLEAN_RAW_DATA switch in phate_runPipeline.py is 'False')
 * pVOG groupings comprising alignment-ready fasta files (under BLAST/Protein/) based on best blast hits
 * HMM/ directory - raw hmm search results for protein sequences (under Protein/) (if CLEAN_RAW_DATA switch in phate_runPipeline.py is 'False')
 * pVOG grouping comprising alignment-ready fasta files (under HMM/Protein/) based on best hmm hits
@@ -93,6 +93,5 @@ The NR database has grown enormously large. It is recommended to use a smaller d
 
 PLANNED FURTHER DEVELOPMENT
 
-The current version of PhATE processes a single contig. Multi-contig genome sequence files will be processed individually and combined into a single output directory. 
+The current version of PhATE processes a single phage sequence contig, so run each contig separately through PhATE. In a future release, multi-contig genome sequence files will be processed and combined into a single output directory. 
 
-Additional blast databases can be readily added to the pipeline; instructions for doing so will be added to the README.
