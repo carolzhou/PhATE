@@ -409,9 +409,13 @@ logfile.write("%s%s\n" % ("callerCount is ",callerCount))
 if callerCount >= 2:
     runCGC = True
 
+if DEBUG:
+    print "DEBUG: next, running CGC_main.py"
 if runCGC:
-    #systemCall('python ' + cgcPath + '/CGC_main.py ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
-    systemCall('python ' + cgcPath + '/CGC_main.py log=' + cgcLog + ' ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
+    #systemCall('python ' + cgcPath + 'CGC_main.py ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
+    if DEBUG:
+        print "DEBUG: calling CGC, cgcLog is", cgcLog
+    systemCall('python ' + cgcPath + 'CGC_main.py log=' + cgcLog + ' ' + outputFolder + '*.cgc > ' + outputFolder + 'CGC_results.txt')
     
 else:
     logfile.write("%s\n" % ("Not running CGC code: too few gene callers to meaningfully compare"))

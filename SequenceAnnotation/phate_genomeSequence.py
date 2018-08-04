@@ -589,8 +589,9 @@ class genome(object):
         GENE_H.write("%s\n" % (outSequence)) 
         GENE_H.close()
         command = "transeq" + " -sequence " + tempGeneFile + " -outseq " + tempProtFile + " -table " + str(geneticCode) + " -frame=1"
-        #result = os.system(command)
-        result = subprocess.check_output(command,shell=True)
+        # OS matters; change to other system call if you get an error message on this line
+        result = os.system(command)
+        #result = subprocess.check_output(command,shell=True)
         PROT_H = open(tempProtFile,"r")
         fLines = PROT_H.read().splitlines()
         for i in xrange(1,(len(fLines))):

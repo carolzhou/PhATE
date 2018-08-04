@@ -54,7 +54,7 @@ import datetime
 
 ##### FILES
 
-CODE_BASE = "./CGC_main"
+CODE_BASE = "CGC_main"
 CODE_FILE = CODE_BASE + ".py"
 LOG_FILE  = CODE_BASE + ".log"
 OUT_FILE  = CODE_BASE + ".out"
@@ -85,20 +85,27 @@ INFO_STRING = "This code currently supports the following gene callers:  GeneMar
 
 ##### GET INPUT PARAMETERS
 
+p_log = re.compile("log=([\w\d\_\-\.]+)")
 fileSet = []
 argCount = len(sys.argv)
+if DEBUG:
+    print "sys.argv is", sys.argv
 if argCount > 1:
 
     if PHATE_PIPELINE:  # First parameter is "log=<logFile>", and remaining parameters are genecall files to compare
         if argCount > 2:
-            match = re.search("log=", sys.argv[1].lower()
+            match = re.search(p_log, sys.argv[1].lower())
             if match:
                 LOG_FILE = match.group(1)
                 LOG2 = open(LOG_FILE,"w")
                 LOG2.write("%s%s\n" % ("Opening log at ",datetime.datetime.now()))
+                if DEBUG:
+                    print "DEBUG: LOG2 has been opened"
             else:
                 print "ERROR: CGC_main.py expects name of log file as first input parameter. Parameter was:", sys.argv[1]
             fileSet = sys.argv[2:]  # collect remaining command-line arguments
+        else:
+            print "ERROR: CGC_main.py says, insufficient arguments provided"
 
     else:  # "Help" input parameters should only be encountered if running code independently at command line
         match = re.search("help", sys.argv[1].lower())  

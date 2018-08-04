@@ -34,7 +34,7 @@
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.
 # THIS CODE IS COVERED BY THE BSD LICENSE. SEE INCLUDED FILE BSD.pdf FOR DETAILS.
 
-import re
+import os, re
 import copy
 import CGC_geneCall
 

@@ -49,6 +49,11 @@ PHATE_WARNINGS           = 'False'   # When "True", PhATE will write warnings to
 PHATE_MESSAGES           = 'False'   # When "True", PhATE will output helpful messages to standard output.
 PHATE_PROGRESS           = 'True'   # When "True", PhATE will output statements regarding execution progress (the lowest level of verbosity)
 
+# Control of CGC messages to user
+CGC_WARNINGS             = 'False'
+CGC_MESSAGES             = 'False'
+CGC_PROGRESS             = 'False'
+
 # Constants and Configurables; defaults will apply if not specified in config file
 
 #various parameters
@@ -78,16 +83,16 @@ BLASTP_HIT_COUNT_DEFAULT = '3'
 BLASTN_HIT_COUNT_DEFAULT = '3'
 
 #blast databases to be used for search
-NCBI_VIRUS_BLAST_DEFAULT         = True 
-NCBI_VIRUS_PROTEIN_BLAST_DEFAULT = True
+NCBI_VIRUS_BLAST_DEFAULT         = False 
+NCBI_VIRUS_PROTEIN_BLAST_DEFAULT = False 
 KEGG_VIRUS_BLAST_DEFAULT         = False     # Requires license
 NR_BLAST_DEFAULT                 = False     # Large data set; blast run takes time
-REFSEQ_PROTEIN_BLAST_DEFAULT     = True      # Large data set; blast run takes time
-PHANTOME_BLAST_DEFAULT           = True
-PVOGS_BLAST_DEFAULT              = True
+REFSEQ_PROTEIN_BLAST_DEFAULT     = False      # Large data set; blast run takes time
+PHANTOME_BLAST_DEFAULT           = False 
+PVOGS_BLAST_DEFAULT              = False 
 UNIPARC_BLAST_DEFAULT            = False     # Turned 'off' for now; not yet in service
-REFSEQ_GENE_BLAST_DEFAULT        = True 
-SWISSPROT_BLAST_DEFAULT          = True
+REFSEQ_GENE_BLAST_DEFAULT        = False 
+SWISSPROT_BLAST_DEFAULT          = False 
 UNIPROT_BLAST_DEFAULT            = False     # not yet in service
 PFAM_BLAST_DEAFULT               = False     # not yet in service
 
@@ -101,7 +106,7 @@ KEGG_VIRUS_HMM_DEFAULT           = False     # Requires license
 NR_HMM_DEFAULT                   = False     # Large data set; hmm run takes time
 REFSEQ_PROTEIN_HMM_DEFAULT       = False     # Large data set; hmm run takes time
 PHANTOME_HMM_DEFAULT             = False     # not yet in service 
-PVOGS_HMM_DEFAULT                = True      #  
+PVOGS_HMM_DEFAULT                = False     #  
 UNIPARC_HMM_DEFAULT              = False     # not yet in service
 REFSEQ_GENE_HMM_DEFAULT          = False     # not yet in service 
 SWISSPROT_HMM_DEFAULT            = False     # not yet in service
@@ -120,52 +125,54 @@ PHATE_OUT = 'True'
 PHATE_ERR = 'True'
 #
 # 2) Name your machine, if you like, and be sure it is set to "True"; (one machine at a time!)
-MYCLUSTER = False    # Your production machine 
-DEVELOPMENT = True   # Your (or my) development machine
+MYCLUSTER   = False    # Your production machine 
+DEVELOPMENT = True    # Your (or my) development/test machine
 #
 # 3) Environment variables, which are global to any instance of this code's execution
 # You need to set these environment variables according to where the data sets and codes reside
 if MYCLUSTER:  # machine running code 
-    BASE_DIR = "/myBaseDir/myDir/PhATE/Code/PhATE_pipeline/" 
-    #os.environ["EMBOSS_HOME"]                   = ".../EMBOSS/EMBOSS-6.6.0/emboss/" #*** name of code is transeq.c
+    BASE_DIR = "/"        # fill this in
+    DATABASE_DIR = "/"    # fill this in
+    SOFTWARE_DIR = "/"    # fill this in
+    os.environ["EMBOSS_HOME"]                   = ".../EMBOSS/EMBOSS-6.6.0/emboss/" #*** code is transeq.c; may be installed global
     os.environ["PIPELINE_DIR"]                  = BASE_DIR
-    os.environ["PSAT_OUT_DIR"]                  = BASE_DIR # only on LLNL system
+    os.environ["PSAT_OUT_DIR"]                  = BASE_DIR 
 
     # Data sets
-    os.environ["KEGG_VIRUS_BASE_DIR"]           = "/Users/yourname/DEV/PhATE/Databases/KEGG/Kegg_virus_22Aug2017/"
+    os.environ["KEGG_VIRUS_BASE_DIR"]           = DATABASE_DIR + "KEGG/"
     os.environ["KEGG_VIRUS_BLAST_HOME"]         = os.environ["KEGG_VIRUS_BASE_DIR"] + "T40000.pep"
-    os.environ["NCBI_VIRUS_BASE_DIR"]           = "/Users/yourname/DEV/PhATE/Databases/NCBI/"
-    os.environ["NCBI_VIRUS_BLAST_HOME"]         = os.environ["NCBI_VIRUS_BASE_DIR"] + "Virus_Genome/"  + "viral.1.1.genomic.fna"
-    os.environ["NCBI_VIRUS_PROTEIN_BLAST_HOME"] = os.environ["NCBI_VIRUS_BASE_DIR"] + "Virus_Protein/" + "viral.1.protein.faa"
+    os.environ["NCBI_VIRUS_BASE_DIR"]           = DATABASE_DIR + "NCBI/"
+    os.environ["NCBI_VIRUS_BLAST_HOME"]         = os.environ["NCBI_VIRUS_BASE_DIR"] + "Virus_Genome/"  + "viral.1_2.genomic.fna"
+    os.environ["NCBI_VIRUS_PROTEIN_BLAST_HOME"] = os.environ["NCBI_VIRUS_BASE_DIR"] + "Virus_Protein/" + "viral.1_2.protein.faa"
     os.environ["NCBI_TAXON_DIR"]                = os.environ["NCBI_VIRUS_BASE_DIR"] + "Virus_Genome/" 
-    os.environ["PHANTOME_BASE_DIR"]             = "/Users/yourname/DEV/PhATE/Databases/Phantome/"
+    os.environ["PHANTOME_BASE_DIR"]             = DATABASE_DIR + "Phantome/"
     os.environ["PHANTOME_BLAST_HOME"]           = os.environ["PHANTOME_BASE_DIR"] + "Phantome_Phage_genes.faa"
-    os.environ["PVOGS_BASE_DIR"]                = "/Users/yourname/DEV/PhATE/Databases/pVOGs/"
+    os.environ["PVOGS_BASE_DIR"]                = DATABASE_DIR + "pVOGs/"
     os.environ["PVOGS_BLAST_HOME"]              = os.environ["PVOGS_BASE_DIR"] + "pVOGs.faa"
-    os.environ["UNIPARC_BASE_DIR"]              = "/Users/yourname/DEV/PhATE/Databases/UniParc/" # Uniparc not yet in service
-    os.environ["UNIPARC_VIRUS_BLAST_HOME"]      = os.environ["UNIPARC_BASE_DIR"] + "insertSubDir/insertName"  #***uniparc_active.fasta ???
-    os.environ["NR_BLAST_BASE_DIR"]             = "/Users/yourname/DEV/PhATE/Databases/NR/"
+    os.environ["UNIPARC_BASE_DIR"]              = DATABASE_DIR + "UniParc/" # Uniparc not yet in service
+    os.environ["UNIPARC_VIRUS_BLAST_HOME"]      = os.environ["UNIPARC_BASE_DIR"] + "uniparc_active.fasta"  #*** ???
+    os.environ["NR_BLAST_BASE_DIR"]             = "/data/data1/sandbox/BLAST/"
     os.environ["NR_BLAST_HOME"]                 = os.environ["NR_BLAST_BASE_DIR"] + "nr"
-    os.environ["REFSEQ_PROTEIN_BASE_DIR"]       = "/Users/yourname/DEV/PhATE/Databases/Refseq/"
+    os.environ["REFSEQ_PROTEIN_BASE_DIR"]       = DATABASE_DIR + "Refseq/Protein/"
     os.environ["REFSEQ_PROTEIN_BLAST_HOME"]     = os.environ["REFSEQ_PROTEIN_BASE_DIR"] + "refseq_protein"
-    os.environ["REFSEQ_GENE_BASE_DIR"]          = "/Users/yourname/DEV/PhATE/Databases/Refseq/Gene/"
+    os.environ["REFSEQ_GENE_BASE_DIR"]          = DATABASE_DIR + "Refseq/Gene/"
     os.environ["REFSEQ_GENE_BLAST_HOME"]        = os.environ["REFSEQ_GENE_BASE_DIR"] + "refseqgene"
-    os.environ["SWISSPROT_BASE_DIR"]            = "/Users/yourname/DEV/PhATE/Databases/Swissprot/"
+    os.environ["SWISSPROT_BASE_DIR"]            = DATABASE_DIR + "Swissprot/"
     os.environ["SWISSPROT_BLAST_HOME"]          = os.environ["SWISSPROT_BASE_DIR"] + "swissprot"
-    os.environ["UNIPROT_BASE_DIR"]              = "/Users/yourname/DEV/PhATE/Databases/Uniprot/"
+    os.environ["UNIPROT_BASE_DIR"]              = DATABASE_DIR + "Uniprot/" # not yet in service
     os.environ["UNIPROT_BLAST_HOME"]            = os.environ["UNIPROT_BASE_DIR"] + "uniprot"
-    os.environ["PFAM_BASE_DIR"]                 = "/Users/yourname/DEV/PhATE/Databases/Pfam/"
+    os.environ["PFAM_BASE_DIR"]                 = DATABASE_DIR + "Pfam/" # not yet in service
     os.environ["PFAM_BLAST_HOME"]               = os.environ["PFAM_BASE_DIR"] + "pfam"
 
     # Gene calling
-    os.environ["PRODIGAL_PATH"]                 = "/usr/local/bin/"
-    os.environ["GLIMMER_PATH"]                  = "/Users/yourname/DEV/PhATE/OtherCodes/Glimmer/glimmer3.02/bin/"
-    os.environ["GENEMARKS_PATH"]                = "/Users/yourname/DEV/PhATE/OtherCodes/GeneMarkS/genemark_suite_linux_64/gmsuite/"  
-    os.environ["PHANOTATE_PATH"]                = "/Users/yourname/DEV/PhATE/OtherCodes/PHANOTATE/PHANOTATE-master/"
-    os.environ["CGC_PATH"]                      = "/Users/yourname/DEV/PhATE/Code/CompareCalls/"
+    os.environ["PRODIGAL_PATH"]                 = SOFTWARE_DIR + "prodigal.v2_50/"
+    os.environ["GLIMMER_PATH"]                  = SOFTWARE_DIR + "glimmer3.02/bin/"
+    os.environ["GENEMARKS_PATH"]                = SOFTWARE_DIR + "GeneMarkS/genemark_suite_linux_64/gmsuite/"  
+    os.environ["PHANOTATE_PATH"]                = SOFTWARE_DIR + "PHANOTATE-master/"
+    os.environ["CGC_PATH"]                      = BASE_DIR + "CompareCalls/"
 
     # Blast
-    os.environ["BLAST_HOME"]                    = "/Users/yourname/DEV/PhATE/OtherCodes/Blast/ncbi-blast-2.7.1+/bin/"
+    os.environ["BLAST_HOME"]                    = SOFTWARE_DIR + "/ncbi-blast-2.7.1+/bin/"
     os.environ["MIN_BLASTP_IDENTITY"]           = MIN_BLASTP_IDENTITY
     os.environ["MAX_BLASTP_HIT_COUNT"]          = MAX_BLASTP_HIT_COUNT 
     os.environ["MAX_BLASTN_HIT_COUNT"]          = MAX_BLASTN_HIT_COUNT 
@@ -183,6 +190,9 @@ if MYCLUSTER:  # machine running code
     os.environ["PHATE_PROGRESS"]                = PHATE_PROGRESS  # Print each step in processing a genome
     os.environ["PHATE_ERR"]                     = PHATE_ERR       # Capture standard errors to files on linux/mac machine
     os.environ["PHATE_OUT"]                     = PHATE_OUT       # Capture standard errors to files on linux/mac machine
+    os.environ["CGC_WARNINGS"]                  = CGC_WARNINGS
+    os.environ["CGC_MESSAGES"]                  = CGC_MESSAGES
+    os.environ["CGC_PROGRESS"]                  = CGC_PROGRESS
 
 elif DEVELOPMENT:  # alternate machine, for code development or testing 
     BASE_DIR = "/Users/carolzhou/DEV/PhATE/Code/" 
@@ -242,6 +252,9 @@ elif DEVELOPMENT:  # alternate machine, for code development or testing
     os.environ["PHATE_PROGRESS"]                = PHATE_PROGRESS
     os.environ["PHATE_ERR"]                     = PHATE_ERR       # Capture standard errors to files on linux/mac machine
     os.environ["PHATE_OUT"]                     = PHATE_OUT       # Capture standard errors to files on linux/mac machine
+    os.environ["CGC_WARNINGS"]                  = CGC_WARNINGS
+    os.environ["CGC_MESSAGES"]                  = CGC_MESSAGES
+    os.environ["CGC_PROGRESS"]                  = CGC_PROGRESS
 
 else:
     print """You need to set the environment variables in """ + CODE + """\n"""
@@ -274,6 +287,13 @@ PSAT_DIR                    = PIPELINE_INPUT_DIR                      # Default;
 
 logfile = PIPELINE_OUTPUT_DIR + CODE_BASE + ".log" #*** Should be converted to a generic pipeline log
 outfile = PIPELINE_OUTPUT_DIR + CODE_BASE + ".out"
+
+# Create log and out files, if not already there
+if not os.path.exists(logfile):
+    open(logfile,"w").close()
+if not os.path.exists(outfile):
+    open(outfile,"w").close()
+
 infile  = CONFIG_FILE   # by default, but this is specified by input parameter
 LOGFILE = open(logfile,"a")  # running log; nead to clean it out occasionally
 LOGFILE.write("%s%s%s\n" % ("Begin log file ",datetime.datetime.now(), " **************************** "))
@@ -1056,8 +1076,11 @@ if PHATE_PROGRESS == 'True':
 if PHATE_MESSAGES == 'True':
     print "Command is,", command
 RUNLOG.write("%s%s\n" % ("Calling the gene-call module. Command is ", command))
-#result = os.system(command)
-result = subprocess.check_output(command,shell=True)
+
+# OS system matters; choose alternate system call if you get error message on this line
+result = os.system(command)
+#result = subprocess.check_output(command,shell=True)
+
 if PHATE_PROGRESS == 'True':
     print "Done!"
 RUNLOG.write("%s%s\n" % ("Gene-call processing complete at ", datetime.datetime.now()))
