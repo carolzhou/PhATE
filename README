@@ -55,9 +55,9 @@ SUPPORTING 3rd PARTY CODES
 * BioPython - biopython.org
 * EMBOSS package - emboss.sourceforge.net
 * Blast+ https://ncbi.nlm.nih.gov/blast
-* GeneMarkS - http://exon.gatech.edu/Genemark/index.html
-* Glimmer - https://ccb.jhu.edu/software/glimmer/
-* Prodigal - https://github.com/hyattpd/Prodigal
+* GeneMarkS - http://exon.gatech.edu/Genemark/index.html (optional; available by license)
+* Glimmer - https://ccb.jhu.edu/software/glimmer/ (optional)
+* Prodigal - https://github.com/hyattpd/Prodigal (optional)
 * PHANOTATE - https://github.com/deprekate/PHANOTATE
 * jackhmmer - https://www.ebi.ac.uk/Tools/hmmer/search/jackhmmer
 
