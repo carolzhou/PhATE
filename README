@@ -91,6 +91,8 @@ Although most supporting data sets are phage- or virus-centric, NR and Refseq Pr
 
 The NR database has grown enormously large. It is recommended to use a smaller database, such as Refseq Protein in place of NR. Furthermore, annotating with NR will add greatly to the time required for processing a genome through PhATE. It is recommended that NR be turned 'off' ('false') until one desires to preform a full/final annotation of the genome of interest, if using NR.
 
+Because the behavior of 3rd party codes can sometimes be unpredictable, it is recommended that the user replace spaces and unusual characters in their fasta headers with the underscore character.
+
 PLANNED FURTHER DEVELOPMENT
 
 The current version of PhATE processes a single phage sequence contig, so run each contig separately through PhATE. In a future release, multi-contig genome sequence files will be processed and combined into a single output directory. 
