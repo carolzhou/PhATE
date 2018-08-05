@@ -36,15 +36,26 @@ import re
 import copy
 import os
 
+PHATE_PIPELINE = True  # Running this code within the PhATE pipeline. Set this to False if running code independently
+#PHATE_PIPELINE = False
+
 ##### Verbosity
 
-CGC_WARNINGS = os.environ["CGC_WARNINGS"]
-CGC_MESSAGES = os.environ["CGC_MESSAGES"]
-CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+if PHATE_PIPELINE:
+    CGC_WARNINGS = os.environ["CGC_WARNINGS"]
+    CGC_MESSAGES = os.environ["CGC_MESSAGES"]
+    CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+else:
+    CGC_WARNINGS = 'True'
+    CGC_MESSAGES = 'True'
+    CGC_PROGRESS = 'True'
+
+#DEBUG = True
+DEBUG = False
 
 p_comment    = re.compile('^#')
 p_caller     = re.compile('([\w\d]+)\sgene\scalls')
-p_callerName = re.compile('[Gg][Ee][Nn][Ee][Mm][Aa][Rr][Kk]|[Gg][Ll][Ii][Mm][Mm][Ee][Rr]|[Pp][Rr][Oo][Dd][Ii][Gg][Aa][Ll]|[Rr][Aa][Ss][Tt]|[Tt][Hh][Ee][Aa]|[Gg][Ff][Ff][3]')
+p_callerName = re.compile('[Gg][Ee][Nn][Ee][Mm][Aa][Rr][Kk]|[Gg][Ll][Ii][Mm][Mm][Ee][Rr]|[Pp][Rr][Oo][Dd][Ii][Gg][Aa][Ll]|[Rr][Aa][Ss][Tt]|[Tt][Hh][Ee][Aa]|[Pp][Hh][Aa][Nn][Oo][Tt][Aa][Tt][Ee]|[Gg][Ff][Ff][3]')
 #p_callerName = re.compile('[Gg][Ee][Nn][Ee][Mm][Aa][Rr][Kk]|[Gg][Ll][Ii][Mm][Mm][Ee][Rr]|[Pp][Rr][Oo][Dd][Ii][Gg][Aa][Ll]|[Rr][Aa][Ss][Tt]|[Pp][Hh][Aa][Tt][Ee]')
 p_dataLine   = re.compile('^(\d+)\t([+-])\t(\d+)\t(\d+)\t(\d+)\t([\d\w\.\-\_]+)')
 
@@ -59,7 +70,7 @@ class GeneCall(object):
         self.rightEnd    = 0
         self.geneLength  = 0
         self.contig      = "unknown"
-        self.protein     = "unknown"
+        self.proteinName = "unknown"
 
     def AssignGeneCall(self,geneName,geneCaller,geneNumber,strand,leftEnd,rightEnd,geneLength,contig="unknown",protein="unknown"):
         self.geneName    = geneName
@@ -70,7 +81,7 @@ class GeneCall(object):
         self.rightEnd    = rightEnd 
         self.geneLength  = geneLength
         self.contig      = contig
-        self.protein     = protein
+        self.proteinName = protein
         return
 
     def PrintAll(self):
@@ -86,7 +97,7 @@ class GeneCall(object):
         return
 
     def PrintAll_brief(self):
-        print "Gene No.", self.geneNumber, "gene caller: ", self.geneCaller, ", leftEnd:", self.leftEnd, ", rightEnd:", self.rightEnd, ", strand:", self.strand, ", length:", self.geneLength, ", contig:", self.contig, ", protein:", self.protein
+        print "Gene No.", self.geneNumber, "gene caller: ", self.geneCaller, ", leftEnd:", self.leftEnd, ", rightEnd:", self.rightEnd, ", strand:", self.strand, ", length:", self.geneLength, ", contig:", self.contig, ", protein:", self.proteinName
         return
 
 class GeneCallSet(object):

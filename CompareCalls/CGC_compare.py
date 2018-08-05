@@ -38,11 +38,22 @@ import os, re
 import copy
 import CGC_geneCall
 
+PHATE_PIPELINE = True  # Running this code within the PhATE pipeline. Set this to False if running code independently
+#PHATE_PIPELINE = False
+
 ##### Verbosity
 
-CGC_WARNINGS = os.environ["CGC_WARNINGS"]
-CGC_MESSAGES = os.environ["CGC_MESSAGES"]
-CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+if PHATE_PIPELINE:
+    CGC_WARNINGS = os.environ["CGC_WARNINGS"]
+    CGC_MESSAGES = os.environ["CGC_MESSAGES"]
+    CGC_PROGRESS = os.environ["CGC_PROGRESS"]
+else:
+    CGC_WARNINGS = 'True'
+    CGC_MESSAGES = 'True'
+    CGC_PROGRESS = 'True'
+
+#DEBUG = True
+DEBUG = False
 
 p_comment   = re.compile('^#')
 
@@ -62,6 +73,8 @@ class Comparison(object):
                 if gene.geneCaller not in self.callerList:
                     self.callerList.append(gene.geneCaller)
             self.callerList.sort()
+            if DEBUG:
+                print "DEBUG: CGC_compare/IdentifyCallers(): self.callerList is", self.callerList
             return len(self.callerList)
         else:
             if CGC_WARNINGS == 'True':
