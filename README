@@ -52,8 +52,8 @@ For simplicity in configuring the locations of dependent databases in the phate_
 
 SUPPORTING 3rd PARTY CODES
 
-* BioPython - biopython.org
-* EMBOSS package - emboss.sourceforge.net
+* BioPython - https://biopython.org/wiki/Download 
+* EMBOSS package - https://sourceforge.net/directory/os:mac/?q=EMBOSS
 * Blast+ https://ncbi.nlm.nih.gov/blast
 * GeneMarkS - http://exon.gatech.edu/Genemark/index.html (optional; available by license)
 * Glimmer - https://ccb.jhu.edu/software/glimmer/ (optional)
