@@ -1,10 +1,6 @@
 ###############################################################
 # Module: phate_genomeSequence.py
 # Programmer: Carol L. Ecale Zhou
-# Data of last update:  October 2016 - code being modified from CGP code base
-#    20 January 2017 - modified code to accommodate phate specs
-#    11 July    2017 - adding method to print pVOGs group fasta sequences for each protein in genome
-#    15 August  2017 - changing PHATE to THEA
 # 
 # Module comprising data structures for organizing genome information
 # Note:  EMBOSS messes with fasta headers; therefore, I am putting minimal info in the header and using only '/'

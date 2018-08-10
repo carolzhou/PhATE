@@ -13,11 +13,6 @@
 #         genbank protein fasta file
 #         contig name
 #
-# Updates:
-#    24 Jan 2017 : begin
-#
-# Programmer's Notes:
-#
 ################################################################
 
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.

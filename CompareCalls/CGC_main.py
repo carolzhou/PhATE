@@ -13,16 +13,6 @@
 #    they have a common format and identify the gene caller in the comments
 #    at the top of the file.
 #
-# Updates:
-#    17 May 2016: begin
-#    3 June 2016: adding CGC_geneCall.py
-#    21 June 2016: ready for code release
-#    6 July 2016: added RAST; added Prodigal gff; capturing contig when given
-#    15 Aug 2017: changing PHATE to THEA
-#    25 Jan 2018: adding protein names
-#
-# Programmer's Notes:
-#
 ################################################################
 
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.

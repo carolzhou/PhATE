@@ -2,14 +2,8 @@
 # Module: phate_annotation.py
 # Programmer: Carol L. Ecale Zhou
 #
-# Data of last update:  October 2016 - code being modified from CGP code base
-#    03 January 2017 - modified output report in method printAnnotationRecord()
-#    05 January 2017 - adding code to pull dbxrefs from local database instances
-#    06 July    2017 - adding code to accommodate VOG identifiers & associated members
-#                    - writing pVOG files for alignments
-#    15 August  2017 - changing name of PHATE to THEA
+# Description: Module containing classes and methods for representing annotation results from various sources 
 #
-# Module containing classes and methods for representing annotation results from various sources 
 # Classes and methods: 
 #     annotationRecord
 #         enterGFFdata(gff/dict)
@@ -17,6 +11,7 @@
 #         printAnnotationRecord2file
 #         printAll
 #         printAll2file(fileH)
+##########################################################
 
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.
 # THIS CODE IS COVERED BY THE BSD LICENSE. SEE INCLUDED FILE BSD.PDF FOR DETAILS.

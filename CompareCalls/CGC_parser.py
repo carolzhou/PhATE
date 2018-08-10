@@ -22,15 +22,6 @@
 #    Glimmer2, use the XXX.g2.coord file; and for Prodigal, use the
 #    XXX.genes.sco file, for Glimmer3, use the run3.coords file. 
 #
-# Updates:
-#    18 May 2016: begin
-#    07 Jul 2016: Parses Glimmer3, Prodigal, GenemarkS, RAST
-#    15 Aug 2016: upgraded to include PHATE parser
-#    18 Apr 2017: slight modification so log and out files go to user results directory
-#    15 Aug 2017: changing PHATE to THEA
-#
-# Programmer's Notes:
-#
 ################################################################
 
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.

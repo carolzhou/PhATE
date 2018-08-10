@@ -6,12 +6,6 @@
 #
 # Description:  Module containing classes and methods for handling data output from a gene caller 
 #
-# Updates:
-#    Begin 2 June 2016
-#    25 Jan 2018:  adding protein names
-#
-# Programmer's Notes:
-#
 # Classes and Methods:
 #    GeneCall()
 #        AssignGeneCall(<input parameters>)

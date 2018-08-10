@@ -39,9 +39,6 @@
 #       than add these sequences to the NR subset and re-run the original
 #       code, phate_createPvogFastaFile.py (see NOTE above).
 #
-# Updates:
-#    22 August 2017: begin
-#
 # Programmer:  CEZhou
 #
 ####################################################################

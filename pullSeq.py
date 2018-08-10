@@ -9,7 +9,7 @@
 # Usage:  python pullSeq.py fastaFile start end 
 #
 # Programmers: 
-#    Carol E. Zhou - 
+#    Carol E. Zhou  
 #
 ################################################################
 

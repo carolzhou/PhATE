@@ -6,13 +6,6 @@
 #
 # Programmer:  C Zhou
 # 
-# Date:  19 October 2016 - begin
-#        03 January 2017 - added genome blast
-#        26 May     2017 - added control to blast or not to blast
-#        06 July    2017 - adding pVOGs blast
-#        05 Sept    2017 - fixing bug in printing of pVOGs group fastas
-#        07 April   2018 - adding refseq gene blast and swissprot blast
-#
 # Classes and Methods:
 #    multiBlast
 #       setBlastParameters(dict)

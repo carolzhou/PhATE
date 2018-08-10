@@ -6,9 +6,6 @@
 #
 # Programmer:  C. E. Zhou
 #
-# Updates:
-#    23 June 2017 - begin
-#
 #########################################################################
 
 # This code was developed by Carol L. Ecale Zhou at Lawrence Livermore National Laboratory.

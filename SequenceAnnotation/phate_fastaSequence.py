@@ -1,9 +1,7 @@
 #############################################################
 # Module: phate_fastaSequence.py
+#
 # Programmer: Carol L. Ecale Zhou
-# Data of last update:  October 2016 - code being modified from CGP code base
-#    20 January 2017 - modified code to accommodate phate specs
-#    23 June    2017 - modifying this code for preparation of pVOGs database
 # 
 # Module containing classes and methods for representing a multi-fasta sequence and associated methods
 # Classes and methods: 
@@ -59,10 +57,6 @@
 #         matchHeader(hdr)
 #         removeEMBOSSpostfix
 #         removeTerminalAsterisk   
-#
-# Programmer's Notes:
-#    1) When performing gene calling, for each protein/peptide object there should be a corresponding parent gene object. 
-#       Wouldn't it be nice to have a pointer from gene to protein, but also, not in Python.
 #
 ####################################################################    
 

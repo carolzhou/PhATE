@@ -9,11 +9,6 @@
 #
 # Usage:  python createPvogFastaFile.py
 #
-# Programmers Notes:
-#
-# Updates:
-#    23 June 2017: begin
-#
 # Programmer:  CEZhou
 #
 ####################################################################

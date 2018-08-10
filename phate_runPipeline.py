@@ -18,7 +18,7 @@
 #     phate_runPipeline.py  - pipeline driver
 #     PipelineInput/        - contains myGenome.fasta (and optionally, myGenome.psat)
 #     PipelineOutput/       - output files are written here to a subdirectory specified in config file
-#     myPhATE.config        - configuration file 
+#     myPhATE.config        - configuration file (copy/modify sample.config)
 #
 # Programmer's Notes:
 #    This code uses a running log; need to occasionally clean it out
@@ -50,9 +50,9 @@ PHATE_MESSAGES           = 'False'   # When "True", PhATE will output helpful me
 PHATE_PROGRESS           = 'True'   # When "True", PhATE will output statements regarding execution progress (the lowest level of verbosity)
 
 # Control of CGC messages to user
-CGC_WARNINGS             = 'False'
-CGC_MESSAGES             = 'False'
-CGC_PROGRESS             = 'False'
+CGC_WARNINGS             = 'True'
+CGC_MESSAGES             = 'True'
+CGC_PROGRESS             = 'True'
 
 # Constants and Configurables; defaults will apply if not specified in config file
 
