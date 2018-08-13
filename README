@@ -5,7 +5,7 @@ README file for the Phage Annotation Toolkit and Evaluation (PhATE) pipeline.
 
 ABOOUT THE PHATE PIPELINE
 
-PhATE is a fully automated computational pipeline for annotating phage genomes or for identifying putative phage genes in bacterial genomes. PhATE is written in Python 2.7. Code execution is controled by a configuration file (see sample.config), which can be tailored to run specific gene finders and to blast sequences against specific phage- or virus-centric data sets, in addition to more generic data sets. PhATE runs at least one gene finding algorithm, then annotates the genome, gene, and protein sequences using blast and a set of fasta sequence databases, and uses an hmm search against the pVOG database. If more than one gene finder is run, PhATE will also provide a side-by-side comparison of the genes called by each gene caller. The user specifies the preferred gene caller, and the genes and proteins predicted by that caller are annotated using blast against the supporting databases. Classification of each protein sequence into a pVOG group is followed by generation of an alignment-ready fasta file.
+PhATE is a fully automated computational pipeline for annotating phage genomes or for identifying putative phage genes in bacterial genomes. PhATE is written in Python 2.7. Code execution is controled by a configuration file (see sample.config), which can be tailored to run specific gene finders and to blast sequences against specific phage- virus-centric data sets, in addition to more generic (genome, protein) data sets. PhATE runs at least one gene finding algorithm, then annotates the genome, gene, and protein sequences using blast and a set of fasta sequence databases, and uses an hmm search against the pVOG database. If more than one gene finder is run, PhATE will also provide a side-by-side comparison of the genes called by each gene caller. The user specifies the preferred gene caller, and the genes and proteins predicted by that caller are annotated using blast against the supporting databases. Classification of each protein sequence into a pVOG group is followed by generation of an alignment-ready fasta file.
 
 HOW TO SET UP PHATE ON YOUR LOCAL MACHINE
 
@@ -13,9 +13,9 @@ Place phate_runPipeline.py in your main execution directory. Create two subdirec
 Place your phage genome fasta file (myGenome.fasta) into the PipelineInput/ subdirectory (single contig)
 Place your configuration file (myPhate.config) in the main directory (same level as phate_runPipeline.py)
 
-You will need to acquire one or more of the databases listed below under SUPPORING DATABASES, and the 3rd party codes listed under SUPPORTING 3rd PARTY CODES. You will need to acquire at least one of the supported gene finders, but it is recommended to run all four gene finders so that the results can be more meaningfully compared. You will need to specifiy the locations of the supporting data sets and codes in phate_runPipeline.py under "USER CONFIGURATION", and you will need to locate your genome file to the PipelineInput directory. Place your configuration file at the top level (alongside phate_runPipeline.py).
+You will need to acquire one or more of the databases listed below under SUPPORING DATABASES, and the 3rd party codes listed under SUPPORTING 3rd PARTY CODES. You will need to acquire at least one of the supported gene finders, but it is recommended to run as many of the four gene finders as is feasible so that the results can be more meaningfully compared. You will need to specifiy the locations of the supporting data sets and codes in phate_runPipeline.py under "USER CONFIGURATION", and you will need to locate your genome file to the PipelineInput directory. Place your configuration file at the top level (alongside phate_runPipeline.py).
 
-You may up- or down-regulate verbosity in the phate_runPipeline.py file, under "USER CONFIGURATION". This includes an option to clean the raw blast and hmm search data from the output directories.
+You may up- or down-regulate verbosity in the phate_runPipeline.py file, under "USER CONFIGURATION". This includes an option to clean the (voluminous) raw blast and hmm search data from the output directories.
 
 (You will need to modify sample.config accordingly.)
 Run the PhATE pipeline at the command line using the following command:
@@ -23,7 +23,7 @@ $ python phate_runPipeline.py myPhate.config
 
 SUPPORTING DATABASES
 
-It is recommended that the user acquire as many of the following sequence databases and associated codes as is feasible, although none are actually required to run the code. (You may specify "translate_only='true'" to do gene finding and stop at that point.) Databases are listed with at least one way of acquiring them, but there may be additional sources.  
+It is recommended that the user acquire as many of the following sequence databases and associated codes as is feasible, although none are actually required to run the code. (You may specify "translate_only='true'" to do gene finding and stop at that point.) Databases are listed with at least one way of acquiring them, but there may be additional sources, and it is possible to substitute subsets of blast databases (e.g., a subset of the NCBI gene database inplace of Refseq Gene).  
 
 * NCBI virus genomes - ftp://ftp.ncbi.nlm.nih.gov/refseq/release/viral/ or https://www.ncbi.nlm.nih.gov/genome/viruses/viral.1.1.1.genomic.fna.gz
 * NCBI accession2taxid file - ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/nucl_gb.accession2taxid.gz or https://www.ncbi.nlm.nih.gov/guide/taxonomy/nucl_gb.accession2taxid.gz
@@ -34,9 +34,9 @@ It is recommended that the user acquire as many of the following sequence databa
 * KEGG virus subset - (available by license) http://www.kegg.jp/kegg/download/
 * KEGG associated files - T40000.pep, T40000.nuc, vg_enzyme.list, vg_genome.list, vg_ko.list, vg_ncbi-geneid.list, vg_ncbi-proteinid.list, vg_pfam.list, vg_rs.list, vg_tax.list, vg_uniprot.list 
 * Phantome protein fasta sequences - http://www.phantome.org/Downloads/phage_proteins_nnnnnnnnn.fasta
-* pVOGs prepared database (pVOGs.faa) - included in PhATE distribution. This data set was derived by C. Zhou from the pVOGs fasta database. For use in PhATE, the sequence fasta headers have been modified to include the pVOG identifiers (all groups to which each sequence belongs). This re-formatting facilitates pVOG group identification and construction of the alignment-ready fasta files. Codes for reconstructing this modified data set are included in the PhATE distribution. Note that the pVOGs are not mutually exclusive, meaning that a sequence may have membership in more than one VOG group. The codes included in the phate distribution will combine identifiers that belong to a given sequence and list all the VOG identifiers in the fasta header. See documentation in DatabasePrep/dbPrep_createPvogFastaFile.py for instructions how to update your local pVOGs data set for use in PhATE, but you can start with the pVOGs.faa file included in the PhATE distribution. 
+* pVOGs prepared database (pVOGs.faa) - included in PhATE distribution. This data set was derived by C. Zhou from the pVOGs fasta database. For use in PhATE, the sequence fasta headers have been modified to include the pVOG identifiers (all groups to which each sequence belongs). This re-formatting facilitates pVOG group identification and construction of the alignment-ready fasta files. Codes for reconstructing this modified data set are included in the PhATE distribution. Note that the pVOGs are not mutually exclusive, meaning that a sequence may have membership in more than one VOG group. The codes included in the phate distribution will combine identifiers that belong to a given sequence and list all the VOG identifiers in the fasta header. In this way, the pVOG fasta database used in PhATE is also non-redundant. See documentation in DatabasePrep/dbPrep_createPvogFastaFile.py for instructions how to update your local pVOGs data set for use in PhATE, but you can start with the pVOGs.faa file included in the PhATE distribution. 
 
-For simplicity in configuring the locations of dependent databases in the phate_runPipeline.py driver script, it is recommended that the above databases be placed in a directory structure as follows:
+For simplicity in configuring the locations of dependent databases in the phate_runPipeline.py driver script, it is suggested that the above databases be placed in a directory structure as follows:
 /Databases/
 	KEGG/
 	NCBI/
@@ -63,9 +63,9 @@ SUPPORTING 3rd PARTY CODES
 
 HOW TO WRITE A CONFIGURATION FILE
 
-Locations of supporting databases and codes are specified in the file, phate_runPipeline.py. 
+Locations of supporting databases and codes are to be specified in the file, phate_runPipeline.py, according to their locations on your local system. 
 
-A sample configuration file is provided (sample.config). Make a copy of this file and rename it accordingly (eg., myPhate.config). The sample.config file is configured according to established default parameters (just about everything turned 'off'). Any of the parameters may be modified (switches turned 'on' or 'off') by assigning 'true' or 'false'. It is suggested that you turn swithes off, then install each supporting database in turn and test the code. A switch not included in the configuration file is CLEAN_RAW_DATA, which you will find in phate_runPipeline.py (under USER CONFIGURATION). By default all raw blast and hmm outputs (written under PipelineOutput/BLAST/ and PipelineOutput/HMM/ subdirectories) will be deleted, so as to limit output volume. However, if you wish to retain that output, turn the CLEAN_RAW_DATA switch to 'True' in phate_runPipeline.py.
+A sample configuration file is provided (sample.config). Make a copy of this file and rename it accordingly (eg., myPhate.config). The sample.config file is configured according to established default parameters (just about everything turned 'off' initially). Any of the parameters may be modified (switches turned 'on' or 'off') by assigning 'true' or 'false'. It is suggested that you turn swithes off, then install each supporting database in turn and test the code. A switch not included in the configuration file is CLEAN_RAW_DATA, which you will find in phate_runPipeline.py (under USER CONFIGURATION). By default all raw blast and hmm outputs (written under PipelineOutput/BLAST/ and PipelineOutput/HMM/ subdirectories) will be deleted, so as to limit output volume. However, if you wish to retain that output, turn the CLEAN_RAW_DATA switch to 'True' in phate_runPipeline.py.
 
 PHATE PIPELINE OUTPUT FILES
 In the user-specified output directory, under PipelineOutput/, the following files will be written:
@@ -85,7 +85,7 @@ Phate output is written to a user-specified output directory (specified in your 
 
 FURTHER RECOMMENDATIONS
 
-PhATE was originally developed for anotating phage genome sequences. However, PhATE may also be useful in helping to identify phage genes within bacterial genomes (i.e., prophage). Thus, the user has the option of running multiple gene callers for bacterial genome sequence (GeneMarkS, Glimmer, Prodigal) and a new gene finder specifically for phage (PHANOTATE). The calls from any two or more of these callers are compared by the PhATE/CGC code so that the user can examine the calls that agree or disagree among the callers, and then run PhaTE again, selecting the caller of choice for annotating the sequence. 
+PhATE was originally developed for anotating phage genome sequences. However, PhATE may also be useful in helping to identify phage genes within bacterial genomes (i.e., prophage). Thus, the user has the option of running multiple gene callers for bacterial genome sequence (GeneMarkS, Glimmer, Prodigal) and a new gene finder specifically for phage (PHANOTATE). The calls from any two or more of these callers are compared by the PhATE/CGC code so that the user can examine the calls that agree or disagree among the callers, and then run PhATE again, selecting the caller of choice for annotating the sequence. 
 
 Although most supporting data sets are phage- or virus-centric, NR and Refseq Protein are included in order to help identify genes/functions that are not known in the virus/phage gene data sets. However, PhATE is not intended to be the sole source for anntotation of bacterial genome sequences, as PhATE is tailored for identification of genes and functions in phage.
 
