@@ -81,7 +81,7 @@ In the user-specified output directory, under PipelineOutput/, the following fil
 
 RUNNING PHATE AS AN "EMBARASSINGLY PARALLEL" CODE
 
-Phate output is written to a user-specified output directory (specified in your myPhate.config file). In this way, PhATE may be set up to run in parallel on any number of nodes of a compute cluster without fear of clashes in writing results.
+Phate output is written to a user-specified output directory (specified in your myPhate.config file). In this way, PhATE may be set up to run in parallel on any number of nodes of a compute cluster without fear of clashes in writing results. Implementing a code in parallel is system dependent.
 
 FURTHER RECOMMENDATIONS
 
