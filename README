@@ -1,3 +1,8 @@
+DO NOT USE THIS CODE. PhATE is now retired, and has been replaced with multiPhATE, at https://github.com/carolzhou/multiPhATE.git.  Thank you.
+
+/Code1/
+Note: This is the "original" version of the PhATE pipeline that was submitted for review at Bioinformatics. This Code1 version is set in stone--do not modify. Continuing development is being done in /Code2/, as the single-genome pipeline. The code in /Code3/ modifies /Code2/ to run under a wrapper that controls processing of multiple contigs.
+
 README file for the Phage Annotation Toolkit and Evaluation (PhATE) pipeline.
 
 # This code was developed by Carol L. Ecale Zhou and Jeffrey Kimbrel at Lawrence Livermore National Laboratory.
