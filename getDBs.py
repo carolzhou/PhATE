@@ -14,7 +14,7 @@
 
 import os, sys, re, time, datetime
 from ftplib import FTP
-import requests
+#import requests
 
 ##############################################################################
 # CONSTANTS, BOOLEANS
@@ -70,6 +70,8 @@ if not os.path.exists(refseqGeneDir):
     os.mkdir(refseqGeneDir)
 if not os.path.exists(swissprotDir):
     os.mkdir(swissprotDir)
+if not os.path.exists(nrDir):
+    os.mkdir(nrDir)
 
 ##############################################################################
 # First, determine if user needs to download BLAST+.
@@ -210,11 +212,15 @@ else:
 ##############################################################################
 # Install NCBI_VIRUS_GENOME
 
-ftpAddr = "ftp.ncbi.nlm.nih.gov"
-file1_1 = "viral.1.1.genomic.fna.gz"
-file1_2 = "viral.2.1.genomic.fna.gz"
-file1_3 = "viral.3.1.genomic.fna.gz"
-file2   = "nucl_gb.accession2taxid.gz"
+ftpAddr  = "ftp.ncbi.nlm.nih.gov"
+file1_1u = "viral.1.1.genomic.fna"
+file1_2u = "viral.2.1.genomic.fna"
+file1_3u = "viral.3.1.genomic.fna"
+file1_1  = file1_1u + ".gz"
+file1_2  = file1_2u + ".gz"
+file1_3  = file1_3u + ".gz"
+file2    = "nucl_gb.accession2taxid.gz"
+
 
 if NCBI_VIRUS_GENOME:
     os.chdir(ncbiGenomeDir)
@@ -237,8 +243,8 @@ if NCBI_VIRUS_GENOME:
     except Exception:
         print ("FTP download for accessory file failed")
 
-    ### Download three volumes of NCBI Virus Genome database
-    print ("Downloading three NCBI Virus Genome database volumes.")
+    ### Download two volumes of NCBI Virus Genome database
+    print ("Downloading two NCBI Virus Genome database volumes.")
     print ("This may take a while...")
 
     try:
@@ -269,15 +275,9 @@ if NCBI_VIRUS_GENOME:
         print ("FTP download for Volume 2 file failed")
 
     try:
-        print ("Volume 3...")
-        localfile = open(file1_3, 'wb')
-        ftp.retrbinary('RETR ' + file1_3, localfile.write, 1024)
-        localfile.close()
-        print ("done")
-    except Exception:
-        print ("FTP download for Volume 3 file failed")
-
         ftp.quit()
+    except Exception:
+        print("Failure to quit FTP.")
 
     ### Unpack files
 
@@ -300,12 +300,6 @@ if NCBI_VIRUS_GENOME:
     except Exception:
         print ("Unpacking of Volume 2 failed")
 
-    try:
-        command = "gunzip " + file1_3
-        success = os.system(command)
-    except Exception:
-        print ("Unpacking of Volume 3 failed")
-
     print ("done")
 
     ### Format files for blasting
@@ -313,22 +307,16 @@ if NCBI_VIRUS_GENOME:
     print ("Performing blast formatting...")
 
     try:
-        command = blastPath + "makeblastdb " + file1_1
+        command = blastPath + "makeblastdb -dbtype nucl -in " + file1_1u
         success = os.system(command)
     except Exception:
         print ("Formatting of Volume 1 failed")
 
     try:
-        command = blastPath + "makeblastdb " + file1_2
+        command = blastPath + "makeblastdb -dbtype nucl -in " + file1_2u
         success = os.system(command)
     except Exception:
         print ("Formatting of Volume 2 failed")
-
-    try:
-        command = blastPath + "makeblastdb " + file1_3
-        success = os.system(command)
-    except Exception:
-        print ("Formatting of Volume 3 failed")
 
     print ("done")
     os.chdir(cwd)
