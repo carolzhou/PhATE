@@ -325,15 +325,30 @@ if NCBI_VIRUS_GENOME:
 # Install NCBI_REFSEQ_PROTEIN
 
 if NCBI_REFSEQ_PROTEIN:
+    filename_root = "refseq_protein"
     os.chdir(ncbiProteinDir)
     try:
         print ("Downloading NCBI Refseq Protein database.")
         print ("This may take a while...")
         command = blastPath + "update_blastdb.pl" + ' ' + "refseq_protein"
-        #success = os.system(command)
+        success = os.system(command)
         print ("NCBI Refseq Protein database download complete.")
     except BlastError:  
         print ("Command " + command + " failed; please check the location of your blast executables")
+
+    print ("Unpacking files...")
+    try:
+        command = "ls > ls.out"
+        success = os.system(command)
+        ls_h = open("ls.out",'r')
+        files = ls_h.read().splitlines()
+        for filename in files:
+            if not re.search('md5', filename):
+            command = "gunzip " + filename
+            success = os.system(command)
+    except Exception:
+        print ("Error encountered in unpacking files")
+
     os.chdir(cwd)
 
 ##############################################################################
@@ -345,10 +360,23 @@ if NCBI_REFSEQ_GENE:
         print ("Downloading NCBI Refseq Gene database.")
         print ("This may take a while...")
         command = blastPath + "update_blastdb.pl" + ' ' + "refseqgene"
-        #success = os.system(command)
+        success = os.system(command)
         print ("NCBI Refseq Gene database download complete.")
     except BlastError:
         print ("Command " + command + " failed; please check the location of your blast executables")
+
+    print ("Unpacking files...")
+    try:
+        command = "ls > ls.out"
+        success = os.system(command)
+        ls_h = open("ls.out",'r')
+        files = ls_h.read().splitlines()
+        for filename in files:
+            if not re.search('md5', filename):
+            command = "gunzip " + filename
+            success = os.system(command)
+    except Exception:
+        print ("Error encountered in unpacking files")
     os.chdir(cwd)
 
 ##############################################################################
@@ -360,10 +388,24 @@ if NCBI_SWISSPROT:
         print ("Downloading Swissprot database.")
         print ("This may take a while...")
         command = blastPath + "update_blastdb.pl" + ' ' + "swissprot"
-        #success = os.system(command)
+        success = os.system(command)
         print ("NCBI Swissprot database download complete.")
     except BlastError:
         print ("Command " + command + " failed; please check the location of your blast executables")
+
+    print ("Unpacking files...")
+    try:
+        command = "ls > ls.out"
+        success = os.system(command)
+        ls_h = open("ls.out",'r')
+        files = ls_h.read().splitlines()
+        for filename in files:
+            if not re.search('md5', filename):
+            command = "gunzip " + filename
+            success = os.system(command)
+    except Exception:
+        print ("Error encountered in unpacking files")
+
     os.chdir(cwd)
 
 ##############################################################################
@@ -375,10 +417,24 @@ if NR:
         print ("Downloading NCBI NR database.")
         print ("This may take a while...")
         command = blastPath + "update_blastdb.pl" + ' ' + "nr"
-        #success = os.system(command)
+        success = os.system(command)
         print ("NCBI NR database download complete.")
     except BlastError:
         print ("Command " + command + " failed; please check the location of your blast executables")
+
+    print ("Unpacking files...")
+    try:
+        command = "ls > ls.out"
+        success = os.system(command)
+        ls_h = open("ls.out",'r')
+        files = ls_h.read().splitlines()
+        for filename in files:
+            if not re.search('md5', filename):
+            command = "gunzip " + filename
+            success = os.system(command)
+    except Exception:
+        print ("Error encountered in unpacking files")
+
     os.chdir(cwd)
 
 ##############################################################################
@@ -389,7 +445,7 @@ if PHANTOME:
     try:
         print ("Formatting Phantome database for blast.")
         command = blastPath + "makeblastdb -dbtype prot -in Phantome_Phage_genes.faa"
-        #success = os.system(command)
+        success = os.system(command)
         print ("done")
     except BlastError:
         print ("Command " + command + " failed; please check the location of your blast executables")
@@ -400,7 +456,7 @@ if PVOGS:
     try:
         print ("Formatting pVOGs database for blast.")
         command = blastPath + "makeblastdb -dbtype prot -in pVOGs.faa"
-        #success = os.system(command)
+        success = os.system(command)
         print ("done")
     except BlastError:
         print ("Command " + command + " failed; please check the location of your blast executables")
