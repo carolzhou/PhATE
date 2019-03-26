@@ -420,7 +420,7 @@ if NCBI_VIRUS_PROTEIN:
 
 if NCBI_REFSEQ_PROTEIN:
     filename_root = "refseq_protein"
-    os.chdir(ncbiProteinDir)
+    os.chdir(refseqProteinDir)
     try:
         print ("Downloading NCBI Refseq Protein database.")
         print ("This may take a while...")
